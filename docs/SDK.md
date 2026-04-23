@@ -42,13 +42,13 @@ Declare in your `AndroidManifest.xml`:
 Everything hangs off the `Oir` object.
 
 ```kotlin
-import com.oir.Oir
+import com.oir.OpenIntelligence
 import android.app.Application
 
 class MyApp : Application() {
     override fun onCreate() {
         super.onCreate()
-        Oir.installContext(this)       // one-time bootstrap per process
+        OpenIntelligence.installContext(this)       // one-time bootstrap per process
     }
 }
 ```
@@ -56,15 +56,15 @@ class MyApp : Application() {
 Three top-level namespaces:
 
 ```kotlin
-Oir.text     // text.complete, text.translate, text.embed, text.classify, text.rerank
-Oir.audio    // audio.transcribe, audio.synthesize, audio.vad
-Oir.vision   // vision.describe, vision.detect, vision.embed, vision.ocr
+OpenIntelligence.text     // text.complete, text.translate, text.embed, text.classify, text.rerank
+OpenIntelligence.audio    // audio.transcribe, audio.synthesize, audio.vad
+OpenIntelligence.vision   // vision.describe, vision.detect, vision.embed, vision.ocr
 ```
 
 Plus one utility:
 
 ```kotlin
-Oir.isCapabilityRunnable("audio.transcribe")
+OpenIntelligence.isCapabilityRunnable("audio.transcribe")
     // → CapabilityStatus.RUNNABLE / NO_DEFAULT_MODEL / MODEL_MISSING / CAPABILITY_NOT_FOUND
 ```
 
@@ -76,7 +76,7 @@ Oir.isCapabilityRunnable("audio.transcribe")
 import kotlinx.coroutines.flow.*
 
 val options = CompletionOptions(maxTokens = 128, temperature = 0.7f)
-Oir.text.completeStream("Summarize in one sentence: …", options)
+OpenIntelligence.text.completeStream("Summarize in one sentence: …", options)
     .onEach { chunk -> print(chunk.text) }   // Flow<TextChunk>
     .collect {}
 ```
@@ -84,14 +84,14 @@ Oir.text.completeStream("Summarize in one sentence: …", options)
 ### One-shot text embedding
 
 ```kotlin
-val vec: FloatArray = Oir.text.embed("vector me")
+val vec: FloatArray = OpenIntelligence.text.embed("vector me")
 // vec.size == 384 for MiniLM
 ```
 
 ### Audio transcription from a WAV file
 
 ```kotlin
-Oir.audio.transcribeStream("/product/etc/oir/voice-sample.wav")
+OpenIntelligence.audio.transcribeStream("/product/etc/oir/voice-sample.wav")
     .collect { chunk -> println(chunk.text) }
 ```
 
@@ -100,7 +100,7 @@ The WAV must be **16-bit PCM, mono, 16 kHz**. The SDK validates this before send
 ### Vision describe (VLM)
 
 ```kotlin
-Oir.vision.describeStream(
+OpenIntelligence.vision.describeStream(
     imagePath = "/sdcard/Pictures/photo.jpg",
     prompt    = "What is happening in this image?",
     options   = DescribeOptions(maxTokens = 256),
@@ -110,7 +110,7 @@ Oir.vision.describeStream(
 ### Object detection (one-shot)
 
 ```kotlin
-val objects: List<DetectedObject> = Oir.vision.detect(
+val objects: List<DetectedObject> = OpenIntelligence.vision.detect(
     imagePath = "/sdcard/Pictures/photo.jpg",
 )
 // each DetectedObject has (x, y, width, height, label, score)
@@ -122,7 +122,7 @@ Every suspend/Flow is structured-concurrency-aware. Cancel by cancelling the cor
 
 ```kotlin
 val job = lifecycleScope.launch {
-    Oir.text.completeStream("…").collect { /* … */ }
+    OpenIntelligence.text.completeStream("…").collect { /* … */ }
 }
 // Later…
 job.cancel()   // Streams stop, oird cleans up the in-flight request.
@@ -160,7 +160,7 @@ class MyTest {
     @Test fun completeStream_emitsExpectedChunks() = runTest {
         oirRule.fake.text.completeStreamReturns("hello world".toTextChunks())
 
-        val result = Oir.text.completeStream("prompt")
+        val result = OpenIntelligence.text.completeStream("prompt")
             .toList().joinToString("") { it.text }
 
         assertEquals("hello world", result)

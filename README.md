@@ -43,7 +43,7 @@ Named after Puerto Rico's *jíbaros* — rural folk, known for resilience and se
 
 Every new AI feature on Android today means an app bundles its own model, its own runtime, its own tokenizer — easily 300+ MB of duplication per app. When three apps ship LLM assistants, the user pays the cost three times over. When the device has 8 GB RAM, two resident LLMs already push the budget.
 
-JibarOS flips that. **Load once, serve many.** An app calls `Oir.text.completeStream("…")` and the runtime figures out the rest — which model, which context pool, priority relative to other in-flight requests, memory budget, cancellation. Shipping this at the platform tier is the only way on-device AI scales past the first couple of apps.
+JibarOS flips that. **Load once, serve many.** An app calls `OpenIntelligence.text.completeStream("…")` and the runtime figures out the rest — which model, which context pool, priority relative to other in-flight requests, memory budget, cancellation. Shipping this at the platform tier is the only way on-device AI scales past the first couple of apps.
 
 OEMs pick the actual backing model per capability (small VLM for a thin phone, 7B LLM for a flagship). Apps targeting the capability surface don't change.
 
@@ -72,8 +72,8 @@ Same conviction (on-device AI is platform infrastructure), opposite governance.
 ```
 ┌────────────────────────────────────────────────────────────────┐
 │  Apps (any UID)                                                 │
-│  Oir.text.completeStream(...) / Oir.audio.transcribeStream(...)│
-│           │ Oir.vision.describe(...) / Oir.vision.detect(...)  │
+│  OpenIntelligence.text.completeStream(...) / OpenIntelligence.audio.transcribeStream(...)│
+│           │ OpenIntelligence.vision.describe(...) / OpenIntelligence.vision.detect(...)  │
 │           ▼                                                     │
 ├────────────────────────────────────────────────────────────────┤
 │  OIRService (system_server)                                     │
@@ -147,7 +147,7 @@ Swap LLaVA-1.5-7B for SmolVLM-500M on a thin device. No framework changes, no ap
 
 ## Runtime + memory management
 
-**Shared residency.** Every app calling `Oir.text.completeStream` hits the SAME loaded model. That model has a **context pool** with N slots (default 4 for `text.complete`); each slot is an independent `llama_context` with its own KV cache. Concurrent submits interleave at the slot level.
+**Shared residency.** Every app calling `OpenIntelligence.text.completeStream` hits the SAME loaded model. That model has a **context pool** with N slots (default 4 for `text.complete`); each slot is an independent `llama_context` with its own KV cache. Concurrent submits interleave at the slot level.
 
 **Budget accounting.** Every loaded model reports weights + pool KV cache in its resident footprint. When a new load would exceed the configured memory budget, LRU eviction runs — skipping models that are in-flight or inside a `warm()` TTL window.
 
@@ -170,17 +170,17 @@ Full reference: [`docs/KNOBS.md`](./docs/KNOBS.md).
 Apps consume OIR via the [`oir-sdk`](https://github.com/Jibar-OS/oir-sdk) Kotlin library. Structured concurrency, typed errors, Java interop.
 
 ```kotlin
-import com.oir.Oir
+import com.oir.OpenIntelligence
 
-Oir.text.completeStream("Summarize this in one sentence: …")
+OpenIntelligence.text.completeStream("Summarize this in one sentence: …")
     .collect { chunk -> print(chunk.text) }
 
-val vector: FloatArray = Oir.text.embed("vector me")
+val vector: FloatArray = OpenIntelligence.text.embed("vector me")
 
-Oir.audio.transcribeStream("/sdcard/voice.wav")
+OpenIntelligence.audio.transcribeStream("/sdcard/voice.wav")
     .collect { chunk -> println(chunk.text) }
 
-val boxes = Oir.vision.detect("/sdcard/photo.jpg")
+val boxes = OpenIntelligence.vision.detect("/sdcard/photo.jpg")
 ```
 
 Full guide: [`docs/SDK.md`](./docs/SDK.md).

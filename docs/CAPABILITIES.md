@@ -37,7 +37,7 @@ The 12 capabilities shipped in v0.6.9. Each has a fixed *shape* (input/output AI
 
 A capability name may have a `:variant` suffix. Example: `text.complete:quality` can declare a different default-model than `text.complete:fast`. Both routes through the same shape + backend. Useful for OEMs that want to offer multiple tiers without forcing apps to hardcode model paths.
 
-The SDK's `Oir.text.completeStream(prompt, options, capability = "text.complete:fast")` takes the variant as an argument. If the variant doesn't exist on the device, it falls back to the base capability (`text.complete`).
+The SDK's `OpenIntelligence.text.completeStream(prompt, options, capability = "text.complete:fast")` takes the variant as an argument. If the variant doesn't exist on the device, it falls back to the base capability (`text.complete`).
 
 ## Runnability
 
@@ -53,7 +53,7 @@ vision.ocr            [NO_DEFAULT_MODEL]
 audio.synthesize      [MODEL_MISSING]      ← path declared but file absent
 ```
 
-Apps can check programmatically via `Oir.isCapabilityRunnable("audio.transcribe")` which returns one of `RUNNABLE`, `NO_DEFAULT_MODEL`, `MODEL_MISSING`, `CAPABILITY_NOT_FOUND`. Use this to show/hide features cleanly instead of guessing.
+Apps can check programmatically via `OpenIntelligence.isCapabilityRunnable("audio.transcribe")` which returns one of `RUNNABLE`, `NO_DEFAULT_MODEL`, `MODEL_MISSING`, `CAPABILITY_NOT_FOUND`. Use this to show/hide features cleanly instead of guessing.
 
 ## Reserved namespaces
 

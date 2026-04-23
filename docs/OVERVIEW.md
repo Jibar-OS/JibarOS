@@ -14,7 +14,7 @@ The name comes from the *jíbaros* — Puerto Rico's rural folk, known for resil
 
 Every new AI feature on Android today means an app bundles its own model, its own inference runtime, and its own tokenizer — often 300 MB+ of duplication per app. When three apps ship LLM assistants, the user pays the cost three times over.
 
-JibarOS flips that. Models load once, at the platform layer, and are shared across every app that asks for a capability. An app calls `Oir.text.completeStream("…")` and the runtime figures out the rest: which model, which context pool, priority relative to other in-flight requests, memory budget, cancellation.
+JibarOS flips that. Models load once, at the platform layer, and are shared across every app that asks for a capability. An app calls `OpenIntelligence.text.completeStream("…")` and the runtime figures out the rest: which model, which context pool, priority relative to other in-flight requests, memory budget, cancellation.
 
 The runtime is **mechanism, not policy**:
 
@@ -65,7 +65,7 @@ All bundled models are permissively licensed (Apache 2.0 or MIT). Non-permissive
 
 ```
 ┌───────────────────┐
-│  App (any UID)    │   Oir.text.completeStream("...")
+│  App (any UID)    │   OpenIntelligence.text.completeStream("...")
 └──────────┬────────┘
            │
            ▼  AIDL binder call
@@ -143,7 +143,7 @@ Forks exist so JibarOS can pin reproducible versions + carry any integration pat
 
 ### For app developers
 
-You want the SDK. See [`oir-sdk`](https://github.com/jibar-os/oir-sdk) — add as a dependency, call `Oir.text.completeStream(...)`, done. Works on any JibarOS-based device.
+You want the SDK. See [`oir-sdk`](https://github.com/jibar-os/oir-sdk) — add as a dependency, call `OpenIntelligence.text.completeStream(...)`, done. Works on any JibarOS-based device.
 
 ### For OEMs considering a JibarOS-based product
 
