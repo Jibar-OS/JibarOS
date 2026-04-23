@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  JibarOS repo manifest.
+
+  Use:
+    repo init -u https://github.com/Jibar-OS/manifest -b main
+    repo sync -c -j8
+    ./.repo/manifests/tools/jibar-os-bake.sh
+
+  The bake step applies 5 patches to frameworks/base/ + 3 patches to
+  device/google/cuttlefish/ + copies oir-framework-addons into tree. See
+  docs/BUILD.md for the full flow.
+
+  Pinned AOSP revision: refs/tags/android-16.0.0_r3 (match what
+  v0.6.9 was validated against on 2026-04-23). Bump this line for each
+  JibarOS release; snapshots/ has version-pinned copies for reproducible
+  builds.
+-->
+<manifest>
+
+  <remote name="aosp"
+          fetch="https://android.googlesource.com/"
+          review="https://android-review.googlesource.com/" />
+
+  <remote name="jibar"
+          fetch="https://github.com/Jibar-OS/"
+          revision="main" />
+
+  <default remote="aosp"
+           revision="refs/tags/android-16.0.0_r3"
+           sync-j="8" />
+
+  <!-- ================================================================
+       Upstream AOSP projects.
+
+       JibarOS is additive on top of upstream — the 5 patches in
+       oir-patches are applied post-sync by the bake script, not via
+       project-override here. That keeps repo sync identical to vanilla
+       AOSP and makes it trivial to bump the pinned AOSP tag.
+
+       Users must also have the standard AOSP manifest projects. The
+       recommended flow is to `repo init` this manifest on a clean tree;
+       `repo sync` will pull both upstream AOSP (via the aosp remote) and
+       JibarOS overlays (via the jibar remote) in one pass.
+
+       If you want to add OR REMOVE upstream projects beyond what
+       JibarOS needs, drop a custom fragment in .repo/local_manifests/.
+       ================================================================ -->
+  <include name="default.xml" />
+
+  <!-- ================================================================
+       JibarOS OIR subsystem projects.
+       ================================================================ -->
+
+  <!-- Native inference daemon. Installs to /system_ext/bin/oird. -->
+  <project path="system/oird"
+           name="oird"
+           remote="jibar"
+           revision="main"
+           clone-depth="1" />
+
+  <!-- OIR-specific new files under frameworks/base/. Symlinked into
+       place by the bake script, since they need to live alongside
+       upstream AOSP files that the bake also patches. -->
+  <project path="vendor/jibar-os/oir-framework-addons"
+           name="oir-framework-addons"
+           remote="jibar"
+           revision="main"
+           clone-depth="1" />
+
+  <!-- Small patches to 5 upstream AOSP files (69 lines). Bake applies. -->
+  <project path="vendor/jibar-os/oir-patches"
+           name="oir-patches"
+           remote="jibar"
+           revision="main"
+           clone-depth="1" />
+
+  <!-- Kotlin SDK + AOSP companion. The SDK sub-dir builds standalone
+       (Gradle); the aosp-companion sub-dir is a platform_apis
+       android_library that apps static_lib against. -->
+  <project path="frameworks/base/oir_sdk_aosp"
+           name="oir-sdk"
+           remote="jibar"
+           revision="main"
+           clone-depth="1" />
+
+  <!-- OirDemo Mission Control reference app. -->
+  <project path="packages/apps/OirDemo"
+           name="oir-demo"
+           remote="jibar"
+           revision="main"
+           clone-depth="1" />
+
+  <!-- Permissively-licensed model bundle. Git-LFS; keep full depth so
+       LFS pointers resolve cleanly. -->
+  <project path="vendor/oir-models"
+           name="oir-vendor-models"
+           remote="jibar"
+           revision="main" />
+
+  <!-- Reference Cuttlefish device tree — applies OIR PRODUCT_PACKAGES
+       + sepolicy via bake. -->
+  <project path="vendor/jibar-os/device_google_cuttlefish"
+           name="device_google_cuttlefish"
+           remote="jibar"
+           revision="main"
+           clone-depth="1" />
+
+  <!-- ================================================================
+       JibarOS-maintained backend forks. Pinned to reproducible snapshots.
+       ================================================================ -->
+
+  <project path="external/llama.cpp"
+           name="platform_external_llamacpp"
+           remote="jibar"
+           revision="bump-b8720"
+           clone-depth="1" />
+
+  <project path="external/whispercpp"
+           name="platform_external_whispercpp"
+           remote="jibar"
+           revision="main"
+           clone-depth="1" />
+
+  <project path="external/onnxruntime"
+           name="platform_external_onnxruntime"
+           remote="jibar"
+           revision="main"
+           clone-depth="1" />
+
+  <project path="external/piper"
+           name="platform_external_piper"
+           remote="jibar"
+           revision="main"
+           clone-depth="1" />
+
+</manifest>
