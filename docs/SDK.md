@@ -188,6 +188,20 @@ OirJavaText.completeStream(prompt, options, new TextChunkCallback() {
 });
 ```
 
+
+## Naming: `OpenIntelligence` (public) vs `Oir*` (internal)
+
+The customer-facing entry point is `OpenIntelligence` — readable, branded, the name to use in app code. Internal helper classes that consumers may touch (errors, testing fakes, Java-interop facades) keep an `Oir` prefix:
+
+| Public surface | Internal helpers |
+|---|---|
+| `OpenIntelligence.text.*` | `OirException` + subclasses (errors namespace) |
+| `OpenIntelligence.audio.*` | `OirFake`, `OirTestRule` (testing namespace) |
+| `OpenIntelligence.vision.*` | `OirJavaText`, `OirJavaAudio`, `OirJavaVision` (Java interop wrappers) |
+| `OpenIntelligence.installContext` | `OirContextProvider`, `OirImpl`, `OirBinderAdapter` (internal package) |
+
+The split mirrors how ML Kit reads — `MLKit.vision.detect(...)` is the public class, but its package is `com.google.mlkit.*` and its internal types are still `Mlkit*Foo`. The Kotlin package path here is `com.oir.*` for the same reason (matches OS-level identifiers like `oir.permission.USE_*`, `oir_worker` binder service, `/vendor/etc/oir/oir_config.xml`).
+
 ## See also
 
 - [`CAPABILITIES.md`](./CAPABILITIES.md) — capability shapes, permissions, defaults

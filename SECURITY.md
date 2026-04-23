@@ -14,10 +14,7 @@ JibarOS follows a rolling-release model. Only the latest tagged release receives
 
 If you believe you have found a security vulnerability in any JibarOS repository, please **do not** open a public GitHub issue.
 
-Instead, please report it privately via one of the following channels:
-
-1. **GitHub Security Advisories** — use the "Report a vulnerability" button in the Security tab of the affected repository. This keeps the report private until a fix is ready.
-2. **Email** — send a report to the maintainer email listed in the repository's `CONTRIBUTING.md` or at `security@<domain-tbd>`. We are in the process of setting up a dedicated security address; until then, the GitHub Security Advisory path is preferred.
+Use **GitHub Security Advisories** — open the affected repository, navigate to the **Security** tab, and click **Report a vulnerability**. This keeps the report private until a coordinated fix lands. Maintainers are notified immediately.
 
 Please include:
 
@@ -37,7 +34,7 @@ Please include:
 
 In scope:
 
-- All code in any `github.com/jibar-os/*` repository.
+- All code in any `github.com/Jibar-OS/*` repository.
 - Runtime behaviour of OIR on a reference Cuttlefish build.
 - Inference-time vulnerabilities (e.g. malformed model files crashing `oird`, or AIDL input handling flaws).
 
@@ -52,4 +49,4 @@ Out of scope:
 The following are known-and-accepted behaviours, not vulnerabilities:
 
 - `oird` loading any GGUF/ONNX file from `/product/etc/oir/` — the runtime trusts files in that path because the path is read-only system partition. Reports that boil down to "I replaced an installed model file" require root + remount and are not in scope.
-- `cmd oir` shell commands running under SHELL_UID bypass rate-limiting by design. See `v0.5` rate-limit documentation.
+- `cmd oir` shell commands running under SHELL_UID bypass rate-limiting by design. See `docs/CLI.md` and `v0.5` rate-limit documentation.
