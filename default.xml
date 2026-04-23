@@ -127,11 +127,4 @@
            remote="jibar"
            revision="main"
            clone-depth="1" />
-
-  <project path="external/piper"
-           name="platform_external_piper"
-           remote="jibar"
-           revision="main"
-           clone-depth="1" />
-
 </manifest>
