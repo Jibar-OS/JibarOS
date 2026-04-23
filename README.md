@@ -49,6 +49,24 @@ OEMs pick the actual backing model per capability (small VLM for a thin phone, 7
 
 ---
 
+
+## Why not just AICore?
+
+Google's AICore (the system AI service on Pixel and select Samsung devices) is the right architecture — AI as a platform service — with the wrong governance. AICore ships closed-source: Google-served models (Gemini Nano), signed by Google, app access gated by an allowlist, single-vendor control. OEMs not in Google's program either build their own parallel stack (Samsung Gauss, etc.) or wait. Third-party developers wanting on-device AI today either pick a vendor lock-in (AICore APIs, ML Kit GenAI), bundle their own model + runtime per app (300+ MB duplicated), or both.
+
+JibarOS keeps the platform-service shape and trades the gatekeeping for openness:
+
+| | AICore | JibarOS |
+|---|---|---|
+| **Source** | Closed | Apache 2.0 |
+| **Model selection** | Google-curated (Gemini Nano) | Any GGUF / ONNX / GGUF mtmd |
+| **Per-OEM bake-in** | Google-approved only | Any OEM, any model per capability |
+| **App access** | Allowlist | `oir.permission.USE_*` |
+| **Backends** | Single Google runtime | llama.cpp / whisper.cpp / ONNX Runtime / libmtmd |
+| **Capability surface** | Curated (sumarize, image-describe, …) | 12 capabilities, OEM-extensible via `<capability>` |
+
+Same conviction (on-device AI is platform infrastructure), opposite governance.
+
 ## Architecture
 
 ```
