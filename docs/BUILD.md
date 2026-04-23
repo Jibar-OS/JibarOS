@@ -14,7 +14,7 @@ Target: Cuttlefish (`aosp_cf_x86_64_phone-trunk_staging-userdebug`). Non-Cuttlef
 ```bash
 mkdir jibar-os && cd jibar-os
 
-repo init -u https://github.com/Jibar-OS/manifest -b main
+repo init -u https://github.com/Jibar-OS/JibarOS -b main
 repo sync -c -j8
 
 # Apply JibarOS patches + overlay (one command, idempotent)
