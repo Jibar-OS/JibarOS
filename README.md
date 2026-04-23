@@ -1,3 +1,13 @@
+<p align="center">
+  <img src="assets/banner.png" alt="JibarOS" width="100%"/>
+</p>
+
+<p align="center">
+  <a href="https://www.loom.com/share/a4de8aa1666e4b9a8efa128f98b7f16c">
+    <strong>▶ Watch the v0.6.9 concurrency demo (Loom, ~2 min)</strong>
+  </a>
+</p>
+
 # JibarOS
 
 **An Android-derivative OS with a built-in AI runtime at the platform layer.**
