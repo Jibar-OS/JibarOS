@@ -16,7 +16,23 @@ JibarOS is an AOSP fork that ships [Open Intelligence Runtime (OIR)](./docs/OVER
 
 Named after Puerto Rico's *jíbaros* — rural folk, known for resilience and self-sufficiency. Models and runtime live on the device, work offline, no cloud account required.
 
+> ⭐ **Like what you see? Give this repo a star** — it's how GitHub decides whether to show the project to other people exploring on-device AI.
+
+---
+
+## How we got here — AAOSP → JibarOS
+
+This project is the follow-up to [**AAOSP**](https://github.com/rufolangus/AAOSP), our earlier proof that a 0.5B-parameter LLM can run end-to-end inside AOSP on commodity hardware with real streaming inference. AAOSP answered the question *"can it run locally?"* — the answer was yes.
+
+But AAOSP shipped as a bundled **chatbot app**. Every other app on the device would still need to bundle its own model, its own runtime, its own tokenizer — and pay the cost separately. That's not what on-device AI is supposed to be.
+
+**JibarOS takes the insight from AAOSP and rewrites the shape.** Instead of "one AI app per device," inference becomes a platform layer — the OS loads models once and multiplexes them across every app that asks for a capability. The OS becomes the runtime. Apps declare what they need (`text.complete`, `vision.describe`, `audio.transcribe`, etc.) and the platform does the rest: residency, scheduling, concurrency, cancellation.
+
+The capability-based API is mechanism, not policy. Agent orchestration, memory tiers, tool dispatch — those belong to layers above OIR.
+
 > ⚠️ **Current status:** pre-1.0. Validated on Android 16 Cuttlefish. No real-device ports yet.
+
+---
 
 ## This repo
 
