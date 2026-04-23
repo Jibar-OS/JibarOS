@@ -116,11 +116,13 @@ The `CapabilityRegistry.applyConfigOverrides()` merges this in at service startu
 
 ## Querying applied knobs at runtime
 
-```
-adb shell cmd oir dumpsys config
-```
+There is no built-in dumpsys for resolved knob values today. To inspect what oird actually applied:
 
-Dumps every resolved knob with its source (`default` / `platform XML` / `OEM XML`). Helpful when a capability behaves unexpectedly — see which knob is driving it.
+- `adb shell cmd oir dumpsys capabilities` shows the resolved default-model + backend per capability.
+- After `adb shell cmd oir warm <cap>`, scrape `adb shell logcat -d | grep -i oird` to see KV-cache estimates, pool sizes, context window, and load metadata for the just-loaded model.
+
+A proper `cmd oir dumpsys config` is on the v0.7 TODO list.
+
 
 ## See also
 

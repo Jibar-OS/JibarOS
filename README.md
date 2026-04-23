@@ -102,7 +102,7 @@ Three load-bearing ideas:
 
 ---
 
-## Capabilities (v0.6.9)
+## Capabilities
 
 | Capability | Shape | Reference backend | Permission |
 |---|---|---|---|
@@ -203,7 +203,7 @@ Complementary, not competitive.
 
 ```bash
 mkdir jibar-os && cd jibar-os
-repo init -u https://github.com/Jibar-OS/jibar-os -b main
+repo init -u https://github.com/Jibar-OS/JibarOS -b main
 repo sync -c -j8
 ./.repo/manifests/tools/jibar-os-bake.sh
 cd vendor/oir-models && ./tools/fetch-models.sh       # pull reference models
