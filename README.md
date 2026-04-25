@@ -253,6 +253,23 @@ External backend forks: [`platform_external_llamacpp`](https://github.com/Jibar-
 
 Pre-1.0. Validated on Android 16 Cuttlefish with SELinux Enforcing. No real-device ports yet. **Looking for device contributors** — see [`CONTRIBUTING.md`](./CONTRIBUTING.md).
 
+## A benchmark we'd like to see exist
+
+Phones are measured by clock speed, GPU triangles, photon counts, and battery hours. None of those answer the question on-device AI now forces us to ask:
+
+> **How much intelligence can a device orchestrate at once, in real time?**
+
+The numbers we'd love to see standardized:
+
+- **Resident capability count** — how many models can load simultaneously without thermal collapse or eviction thrash?
+- **See-think-speak latency** — phone takes a photo, identifies what's in it, formulates a sentence, speaks it back. End-to-end, in seconds. (Probably ~2 s milestone on a flagship. What's the floor on a $200 device?)
+- **Concurrent agent capacity** — how many independent on-device agent loops can the device sustain in parallel before the user notices?
+- **Intelligence bandwidth** — total inferences per second the device serves across every app, every capability.
+
+There's no "Geekbench for orchestrated intelligence" — and OEMs planning AI-as-a-system features have nothing to spec against. JibarOS makes the question askable: by exposing inference as a shared, scheduled, budgeted platform service, the runtime gives you something concrete to measure.
+
+We don't have the benchmarks yet. We'd like to see "orchestrated intelligence" become the next axis OEMs compete on, alongside camera and battery. If you're building benchmarks that capture multi-capability concurrent inference — or if you're an OEM with a target device class and a list of limits you wish were standardized — open an issue.
+
 ## License
 
 Apache 2.0. See [`LICENSE`](./LICENSE) in each repo.
