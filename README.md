@@ -67,6 +67,20 @@ JibarOS keeps the platform-service shape and trades the gatekeeping for openness
 
 Same conviction (on-device AI is platform infrastructure), opposite governance.
 
+## Where this matters
+
+JibarOS is mechanism, not policy — but here's what the mechanism enables. None of these are promised features; they're shapes of products people could build once on-device AI is shared platform infrastructure rather than a Google-curated cloud API or a per-app duplicated runtime. Half of these are the reason the architecture exists.
+
+- **Connectivity-denied rugged devices** — defense, maritime, mining, oil & gas, search-and-rescue. Tablets and handhelds where backhaul is intermittent, jammable, or simply absent. The runtime is the whole AI stack; nothing leaves the device.
+- **Privacy-regulated workflows** — clinical scribes generating structured notes from doctor-patient conversations, therapy + coaching companions, clinical translation in multilingual care, legal-discovery tooling. Patient / client utterance never crosses a network.
+- **Body-worn cameras and dashcams** — record + transcribe + redact (faces, plates) on-device before footage ever reaches the evidence locker. Privacy by design, no cloud chain-of-custody surface area.
+- **Latency-critical interaction** — AR translation overlays, live captioning for deaf users, voice-controlled vehicles, robot safety-stops. Anywhere a 200 ms cloud round-trip is the difference between "natural" and "broken."
+- **Robotics** — warehouse pick-and-place, last-mile delivery, eldercare service robots. Multimodal sensing + reasoning where the actuators are physical and the network is a liability, not an asset.
+- **Industrial-floor and field tools** — air-gapped manufacturing HMIs, agricultural drones and tractors, EV charging kiosks, smart vending. The device maker picks the model bake-in for the workload — not Google, not Samsung, not us.
+- **Personal-data consumer apps** — journaling, education aids, mental-health companions. Things people choose precisely *because* their content doesn't leave the device.
+
+If you're prototyping in any of these spaces — open an issue in the main repo or start a discussion. Real use cases shape the runtime more than any roadmap.
+
 ## Architecture
 
 ```
