@@ -1,0 +1,8 @@
+# JibarOS funding sources.
+#
+# GitHub Sponsors application is pending. When the org is approved this entry
+# lights up the "Sponsor" button across every repo in the Jibar-OS org.
+github: [Jibar-OS]
+
+# Optional: add open_collective, buy_me_a_coffee, ko_fi, etc. as alternative
+# channels. Left empty for now to keep a single canonical donation surface.

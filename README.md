@@ -253,6 +253,16 @@ External backend forks: [`platform_external_llamacpp`](https://github.com/Jibar-
 
 Pre-1.0. Validated on Android 16 Cuttlefish with SELinux Enforcing. No real-device ports yet. **Looking for device contributors** — see [`CONTRIBUTING.md`](./CONTRIBUTING.md).
 
+## Get involved
+
+JibarOS is pre-1.0 and small. The two things we need most:
+
+**A real device to port to.** v0.6.9 is validated on Cuttlefish (the AOSP emulator). The next milestone is a real-device port — Pixel 8 / 8a / 9 are the most tractable targets because their device trees are well-documented and the AOSP `cuttlefish → pixel` diff is contained. If you have a Pixel sitting in a drawer (or want to chip in toward one), open a discussion — that's the single biggest accelerator on the v0.8 roadmap right now.
+
+**Code + docs contributions.** Capability backends, device tree ports, test harnesses, OEM bake-in playbooks. See [`CONTRIBUTING.md`](./CONTRIBUTING.md). Lowest-barrier first commits: [`oir-demo`](https://github.com/Jibar-OS/oir-demo) (Kotlin demo app), [`docs/`](./docs/) (clarify whatever confused you), [`oir-vendor-models`](https://github.com/Jibar-OS/oir-vendor-models) (curate permissively-licensed model recipes).
+
+**Funding:** GitHub Sponsors button is on the way (pending GitHub's org-application approval). Once live, sponsor tiers map to concrete things — a Pixel dev unit, a month of build-host VM, a backend integration sprint. Until then, the most useful contribution is a starred repo + a discussion post about your use case.
+
 ## A benchmark we'd like to see exist
 
 Phones are measured by clock speed, GPU triangles, photon counts, and battery hours. None of those answer the question on-device AI now forces us to ask:
