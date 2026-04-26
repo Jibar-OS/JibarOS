@@ -53,19 +53,27 @@ adb wait-for-device
 adb shell cmd oir dumpsys capabilities
 ```
 
-Expected on a clean Cuttlefish build (5 baseline models in `oir-vendor-models`):
+Expected on a clean Cuttlefish build (3 models + a voice WAV in `oir-vendor-models`):
 
 ```
 OIR capabilities (12 total):
   text.complete         [RUNNABLE]
+  text.translate        [RUNNABLE]
   text.embed            [RUNNABLE]
   audio.transcribe      [RUNNABLE]
-  vision.embed          [RUNNABLE]
-  vision.detect         [RUNNABLE]
-  …
+  text.classify         [NO_DEFAULT_MODEL]
+  text.rerank           [MODEL_MISSING]
+  audio.synthesize      [MODEL_MISSING]
+  audio.vad             [MODEL_MISSING]
+  vision.embed          [MODEL_MISSING]   ← OEM opts in via PRODUCT_PACKAGES += oir_siglip_model
+  vision.describe       [NO_DEFAULT_MODEL]
+  vision.detect         [MODEL_MISSING]   ← OEM supplies an RT-DETR or YOLO ONNX
+  vision.ocr            [NO_DEFAULT_MODEL]
+
+Summary: 4 runnable, 3 unbacked, 5 model-missing
 ```
 
-Launch **OirDemo** from the app drawer → tap **Fire All** → every RUNNABLE tile streams to completion.
+Launch **OirDemo** from the app drawer → tap **Fire All**. The 4 RUNNABLE tiles (`text.complete`, `text.translate`, `text.embed`, `audio.transcribe`) stream to completion; the 5th (`vision.detect`) shows a clean MODEL_MISSING error until an OEM bakes the detector.
 
 ## Incremental development
 

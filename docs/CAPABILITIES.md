@@ -26,10 +26,10 @@ The 12 capabilities shipped in v0.6.9. Each has a fixed *shape* (input/output AI
 | `audio.vad` | RealtimeBoolean | `USE_AUDIO` | `silero_vad.onnx` | ort | Model missing |
 | `vision.embed` | Vector | `USE_VISION` | `siglip-base-patch16-224.onnx` | ort | Model missing |
 | `vision.describe` | TokenStream | `USE_VISION` | — (OEM-supplied VLM, pipe-delim `<mmproj>|<llm>`) | mtmd | ⚠️ No default |
-| `vision.detect` | BoundingBoxes | `USE_VISION` | `rtdetr-r50vd-coco.onnx` | ort | ✅ Runnable |
+| `vision.detect` | BoundingBoxes | `USE_VISION` | `rtdetr-r50vd-coco.onnx` (OEM-supplied) | ort | Model missing |
 | `vision.ocr` | BoundingBoxes | `USE_VISION` | — (OEM-supplied det+rec pair) | ort | ⚠️ No default |
 
-- **✅ Runnable** — reference Cuttlefish build boots with this capability immediately.
+- **✅ Runnable** — reference Cuttlefish build boots with this capability immediately (the 3 bundled models + the Qwen-shared translate cover 4 of the 12 capabilities).
 - **⚠️ No default** — capability declared, but the permissive-license landscape has no universal default. OEMs bake their choice.
 - **Model missing** — reference model is declared in `capabilities.xml`, but the permissive-license binary isn't bundled today. OEMs or contributors supply.
 
