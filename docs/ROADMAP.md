@@ -27,7 +27,7 @@ Treat as urgent — the daemon serves every app on the device, and untrusted-inp
 - **v0.4** — 7 capabilities live with permissive default models. Whisper + ONNX Runtime + libllava integrations.
 - **v0.5** — `audio.vad` (Silero) + per-UID rate limits + OEM tuning knobs + libmtmd bump for modern VLMs.
 - **v0.6** — `ContextPool` with priority-aware wait queue; KV-cache memory accounting; 4 new capabilities (`text.classify`, `text.rerank`, `text.translate`, `vision.ocr`); cross-backend scheduler. **12 capabilities total.**
-- **v0.6.9** — Concurrent-load deadlock fix; in-progress dedup registry on both oird + OIRService sides; Fire All validated end-to-end on Cuttlefish (6 RUNNABLE capabilities concurrent, zero hangs); public migration to the `Jibar-OS` GitHub org.
+- **v0.6.9** — Concurrent-load deadlock fix; in-progress dedup registry on both oird + OIRService sides; Fire All validated end-to-end on Cuttlefish (5 capabilities concurrent through OirDemo Fire All, zero hangs (6 RUNNABLE in dumpsys including a manually-warmed vision.describe)); public migration to the `Jibar-OS` GitHub org.
 
 ---
 

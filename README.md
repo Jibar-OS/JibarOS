@@ -20,7 +20,7 @@
 </p>
 
 <p align="center">
-  <em>v0.6.9 Fire All on Cuttlefish — 6 capabilities streaming concurrently through the OIR platform service.</em>
+  <em>v0.6.9 Fire All on Cuttlefish — 5 capabilities streaming concurrently through the OIR platform service.</em>
   <br/>
   <a href="https://www.loom.com/share/a4de8aa1666e4b9a8efa128f98b7f16c">▶ Watch the full ~2 min demo</a>
 </p>
@@ -141,7 +141,7 @@ Full details: [`docs/CAPABILITIES.md`](./docs/CAPABILITIES.md).
 
 JibarOS declares the capability contract; OEMs pick the backing model. Two mechanisms:
 
-**Platform bake-in** — the reference Cuttlefish build ships 5 permissive defaults via [`oir-vendor-models`](https://github.com/Jibar-OS/oir-vendor-models) (Apache 2.0 + MIT). `PRODUCT_PACKAGES += oir_default_model oir_minilm_model oir_whisper_tiny_en_model …` installs them to `/product/etc/oir/` at build time.
+**Platform bake-in** — the reference Cuttlefish build ships 3 permissive-license models via [`oir-vendor-models`](https://github.com/Jibar-OS/oir-vendor-models) (Qwen 2.5 0.5B + MiniLM + whisper-tiny-en, Apache 2.0 + MIT) plus a CC0 voice-sample WAV for the demo. `PRODUCT_PACKAGES += oir_default_model oir_minilm_model oir_whisper_tiny_en_model oir_voice_sample_wav` installs them to `/product/etc/oir/` at build time. Together they cover 4 of the 5 OirDemo capabilities (text.complete + text.translate share Qwen). vision.detect needs an OEM-supplied detector (RT-DETR Apache 2.0 is the recommended permissive option).
 
 **Per-OEM override** — drop `/vendor/etc/oir/oir_config.xml` on your image:
 
@@ -167,7 +167,7 @@ Swap LLaVA-1.5-7B for SmolVLM-500M on a thin device. No framework changes, no ap
 
 **Priority-aware queues.** `audio.*` capabilities default to `AUDIO_REALTIME`; everything else to `NORMAL`. Queued audio submits jump ahead of queued text submits within a shared pool. Priority is queue-order, not preemption — a long in-flight completion runs to completion.
 
-**Concurrency proof.** v0.6.9 Fire All validated on Cuttlefish: five concurrent `load*()` calls across four backends (text.complete + text.embed + audio.transcribe + vision.detect + vision.describe) all resolved without hangs, six capabilities streamed simultaneously. See the Loom above.
+**Concurrency proof.** v0.6.9 Fire All validated on Cuttlefish: 5 concurrent submits across 3 backends (text.complete + text.translate + text.embed via llama; audio.transcribe via whisper; vision.detect via ONNX Runtime), 4 distinct loaded models (Qwen shared by complete + translate). All resolved without hangs. See the Loom above.
 
 ---
 

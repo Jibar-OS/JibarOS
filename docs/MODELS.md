@@ -4,24 +4,22 @@ Every OIR capability has a backing model. This doc covers: what ships in the ref
 
 ## Reference bundle (Cuttlefish baseline)
 
-The [`oir-vendor-models`](https://github.com/Jibar-OS/oir-vendor-models) repo is a Git-LFS bundle of permissively-licensed models that install to `/product/etc/oir/` via `prebuilt_etc` modules.
+The [`oir-vendor-models`](https://github.com/Jibar-OS/oir-vendor-models) repo provides permissively-licensed models that install to `/product/etc/oir/` via `prebuilt_etc` modules. Models are downloaded by `tools/fetch-models.sh` from canonical upstream homes (HuggingFace), not vendored as Git LFS — keeps the repo lightweight.
 
 | File | Capability served | License | Size |
 |---|---|---|---|
 | `qwen2.5-0.5b-instruct-q4_k_m.gguf` | `text.complete`, `text.translate` | Apache 2.0 | ~470 MB |
 | `all-MiniLM-L6-v2.Q8_0.gguf` | `text.embed` | Apache 2.0 | ~24 MB |
 | `whisper-tiny-en.Q5.bin` | `audio.transcribe` | MIT | ~31 MB |
-| `siglip-base-patch16-224.onnx` | `vision.embed` | Apache 2.0 | ~372 MB |
 | `voice-sample.wav` | OirDemo `audio.transcribe` demo input | CC0 | ~720 KB |
 
-The Cuttlefish reference build (`device_google_cuttlefish`) ships with these five in `PRODUCT_PACKAGES`:
+The Cuttlefish reference build (`device_google_cuttlefish`) selects 3 model packages + the demo WAV in `PRODUCT_PACKAGES`:
 
 ```make
 PRODUCT_PACKAGES += \
     oir_default_model \
     oir_minilm_model \
     oir_whisper_tiny_en_model \
-    oir_siglip_model \
     oir_voice_sample_wav
 ```
 
@@ -32,10 +30,11 @@ These capabilities are declared in `capabilities.xml` but ship **without a platf
 | Capability | Why not bundled |
 |---|---|
 | `vision.describe` | VLMs are typically 500 MB–5 GB. Size/quality tradeoff is device-dependent (SmolVLM-500M for thin devices, LLaVA-7B for flagships). |
-| `vision.detect` | RT-DETR ships as the permissive default. YOLO family is AGPL — OEMs who accept the AGPL obligations can swap via `capability_tuning.vision.detect.default_model`. |
+| `vision.detect` | No detector bundled by default. RT-DETR (Apache 2.0) is the recommended permissive choice; YOLO family is AGPL with stricter obligations. OEMs supply via `capability_tuning.vision.detect.default_model` or by adding to PRODUCT_PACKAGES. |
 | `audio.synthesize` | Piper voice + `.phonemes.json` G2P sidecar is **locale-specific**. No universal voice default. |
 | `text.classify` / `text.rerank` | Classifier heads are task-specific. No universal default. |
 | `vision.ocr` | Needs a det+rec ONNX pair plus a vocab sidecar — language-specific. |
+| `vision.embed` | siglip-base-patch16-224 is declared in `oir-vendor-models/Android.bp` for OEMs who want to opt in (`PRODUCT_PACKAGES += oir_siglip_model`), but ~372 MB is more than the platform-default story warrants. |
 
 OEMs bake their choice for each — see [OEM guide](#oem-bake-in-guide) below.
 
