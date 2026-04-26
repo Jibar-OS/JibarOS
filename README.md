@@ -251,7 +251,7 @@ External backend forks: [`platform_external_llamacpp`](https://github.com/Jibar-
 
 ## Status
 
-Pre-1.0. Validated on Android 16 Cuttlefish with SELinux Enforcing. No real-device ports yet. **Looking for device contributors** — see [`CONTRIBUTING.md`](./CONTRIBUTING.md).
+Pre-1.0. Validated on Android 16 Cuttlefish with SELinux Enforcing. No real-device ports yet. **Looking for device contributors** — see [`CONTRIBUTING.md`](./CONTRIBUTING.md). Public roadmap: [`docs/ROADMAP.md`](./docs/ROADMAP.md).
 
 ## Get involved
 
