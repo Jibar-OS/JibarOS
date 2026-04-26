@@ -146,7 +146,7 @@ Full details: [`docs/CAPABILITIES.md`](./docs/CAPABILITIES.md).
 
 JibarOS declares the capability contract; OEMs pick the backing model. Two mechanisms:
 
-**Platform bake-in** — the reference Cuttlefish build ships 3 permissive-license models via [`oir-vendor-models`](https://github.com/Jibar-OS/oir-vendor-models) (Qwen 2.5 0.5B + MiniLM + whisper-tiny-en, Apache 2.0 + MIT) plus a CC0 voice-sample WAV for the demo. `PRODUCT_PACKAGES += oir_default_model oir_minilm_model oir_whisper_tiny_en_model oir_voice_sample_wav` installs them to `/product/etc/oir/` at build time. Together they cover 4 of the 5 OirDemo capabilities (text.complete + text.translate share Qwen). vision.detect needs an OEM-supplied detector (RT-DETR Apache 2.0 is the recommended permissive option).
+**Platform bake-in** — the reference Cuttlefish build ships 4 permissive-license models via [`oir-vendor-models`](https://github.com/Jibar-OS/oir-vendor-models) (Qwen 2.5 0.5B + MiniLM + whisper-tiny-en + SigLIP-base vision tower, Apache 2.0 + MIT) plus a CC0 voice-sample WAV for the demo. `PRODUCT_PACKAGES += oir_default_model oir_minilm_model oir_whisper_tiny_en_model oir_siglip_model oir_voice_sample_wav` installs them to `/product/etc/oir/` at build time. Together they cover 5 of the 12 capabilities runnable on a clean boot (text.complete, text.translate sharing Qwen, text.embed, audio.transcribe, vision.embed). vision.detect needs an OEM-supplied detector (RT-DETR Apache 2.0 is the recommended permissive option).
 
 **Per-OEM override** — drop `/vendor/etc/oir/oir_config.xml` on your image:
 

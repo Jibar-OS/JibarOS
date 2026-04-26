@@ -11,17 +11,21 @@ The [`oir-vendor-models`](https://github.com/Jibar-OS/oir-vendor-models) repo pr
 | `qwen2.5-0.5b-instruct-q4_k_m.gguf` | `text.complete`, `text.translate` | Apache 2.0 | ~470 MB |
 | `all-MiniLM-L6-v2.Q8_0.gguf` | `text.embed` | Apache 2.0 | ~24 MB |
 | `whisper-tiny-en.Q5.bin` | `audio.transcribe` | MIT | ~31 MB |
+| `siglip-base-patch16-224.onnx` | `vision.embed` | Apache 2.0 | ~372 MB |
 | `voice-sample.wav` | OirDemo `audio.transcribe` demo input | CC0 | ~720 KB |
 
-The Cuttlefish reference build (`device_google_cuttlefish`) selects 3 model packages + the demo WAV in `PRODUCT_PACKAGES`:
+The Cuttlefish reference build (`device_google_cuttlefish`) selects 4 model packages + the demo WAV in `PRODUCT_PACKAGES`:
 
 ```make
 PRODUCT_PACKAGES += \
     oir_default_model \
     oir_minilm_model \
     oir_whisper_tiny_en_model \
+    oir_siglip_model \
     oir_voice_sample_wav
 ```
+
+**License note for SigLIP:** the canonical ONNX export comes from `huggingface.co/Xenova/siglip-base-patch16-224` (vision tower, fp32). The base model `google/siglip-base-patch16-224` is Apache 2.0; the Xenova export is a derivative — Apache 2.0 propagates by license terms, but the Xenova repo card doesn't explicitly restate it. Pre-1.0 reference build uses Xenova's URL via `fetch-models.sh`. For a shipped OEM product, mirror the file to your own LFS / Release asset and document provenance for an explicit attestation chain.
 
 ## Deliberately not bundled
 
@@ -34,7 +38,6 @@ These capabilities are declared in `capabilities.xml` but ship **without a platf
 | `audio.synthesize` | Piper voice + `.phonemes.json` G2P sidecar is **locale-specific**. No universal voice default. |
 | `text.classify` / `text.rerank` | Classifier heads are task-specific. No universal default. |
 | `vision.ocr` | Needs a det+rec ONNX pair plus a vocab sidecar — language-specific. |
-| `vision.embed` | siglip-base-patch16-224 is declared in `oir-vendor-models/Android.bp` for OEMs who want to opt in (`PRODUCT_PACKAGES += oir_siglip_model`), but ~372 MB is more than the platform-default story warrants. |
 
 OEMs bake their choice for each — see [OEM guide](#oem-bake-in-guide) below.
 
