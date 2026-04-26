@@ -86,7 +86,6 @@ Mechanical refactor — preserve every public symbol, just relocate. Risk is con
 - End-to-end `repo init → bake.sh → m → launch_cvd` validation from a clean clone (not yet exercised by anyone outside the project).
 - 100-submit mixed-capability stress + `dumpsys memory` snapshot.
 - Cross-backend scheduler "audio.* preempts text.*" live test.
-- `oir.permission.USE_CODE` formally declared (PM rejected the grant attempt during v0.6.9).
 
 ### Observability
 
