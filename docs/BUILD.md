@@ -13,20 +13,27 @@ Target: Cuttlefish (`aosp_cf_x86_64_phone-trunk_staging-userdebug`). Non-Cuttlef
 
 ```bash
 mkdir jibar-os && cd jibar-os
-
-repo init -u https://github.com/Jibar-OS/JibarOS -b main
-repo sync -c -j8
-
-# Apply JibarOS patches + overlay (one command, idempotent)
-./.repo/manifests/tools/jibar-os-bake.sh
+curl -fsSL https://raw.githubusercontent.com/Jibar-OS/JibarOS/main/tools/bootstrap.sh | bash
 ```
 
-The bake step does three things:
-1. Applies 5 small patches from `oir-patches` to upstream AOSP files (69 lines total).
-2. Applies 3 device-tree patches from `device_google_cuttlefish` to the Cuttlefish shared sepolicy.
-3. Symlinks the `oir-framework-addons` tree into `frameworks/base/`.
+`bootstrap.sh` does four things:
+1. `repo init` against upstream AOSP at the JibarOS-pinned tag (`android-16.0.0_r3`).
+2. Drops the JibarOS overlay manifest into `.repo/local_manifests/jibaros.xml`.
+3. `repo sync -c -j8` (this is the long step — pulls AOSP + JibarOS overlays in one pass).
+4. Runs the JibarOS bake step (applies 5 small patches to `frameworks/base/`, 3 device-tree patches to `device/google/cuttlefish/`, and copies the `oir-framework-addons` tree into place).
 
-Each step is idempotent — re-running the script after an `upstream` bump reapplies cleanly.
+Every step is idempotent — re-run `bootstrap.sh` after an upstream bump and it reapplies cleanly.
+
+If you'd rather run the steps by hand:
+
+```bash
+repo init -u https://android.googlesource.com/platform/manifest -b android-16.0.0_r3
+mkdir -p .repo/local_manifests
+curl -fsSL https://raw.githubusercontent.com/Jibar-OS/JibarOS/main/jibaros.xml \
+    -o .repo/local_manifests/jibaros.xml
+repo sync -c -j8
+curl -fsSL https://raw.githubusercontent.com/Jibar-OS/JibarOS/main/tools/jibar-os-bake.sh | bash
+```
 
 ## Build
 
@@ -93,13 +100,12 @@ adb push out/target/product/vsoc_x86_64/system/framework/oat/x86_64/services.{od
 adb shell pkill system_server
 ```
 
-A utility script `tools/cvd-push.sh` in the `manifest` repo wraps this pattern.
 
 ## Troubleshooting
 
 ### `build completed successfully` but `launch_cvd` fails on `super.img` not found
 
-AOSP's build produces component images (`system.img`, `system_ext.img`, etc.) but not `super.img` unless you run `m superimage`. If your workflow uses `lpmake` to repack super, a helper lives at `tools/repack-super.sh` in `manifest`.
+AOSP's build produces component images (`system.img`, `system_ext.img`, etc.) but not `super.img` unless you run `m superimage`. If your workflow uses `lpmake` to repack super, the `BoardConfig.mk` for cuttlefish has the partition layout you'll need.
 
 ### `cmd oir dumpsys capabilities` reports everything `[MODEL_MISSING]`
 
@@ -121,7 +127,11 @@ cd vendor/oir-models && git lfs pull
 adb shell logcat | grep -i avc.*oir
 ```
 
-If you see denials, it usually means device-tree sepolicy patches weren't applied — re-run `./.repo/manifests/tools/jibar-os-bake.sh`.
+If you see denials, it usually means device-tree sepolicy patches weren't applied — re-run `bootstrap.sh` (which is idempotent) or just the bake step:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Jibar-OS/JibarOS/main/tools/jibar-os-bake.sh | bash
+```
 
 ## See also
 

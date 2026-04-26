@@ -2,10 +2,9 @@
 # JibarOS post-sync bake step — applies oir-patches + copies
 # oir-framework-addons into the AOSP tree. Idempotent.
 #
-# Run from the AOSP tree root after `repo sync`:
-#   ./.repo/manifests/tools/jibar-os-bake.sh
-#
-# Or directly: tools/jibar-os-bake.sh (when running from manifest/).
+# Invoked by tools/bootstrap.sh as the last step. To re-run by hand
+# from the AOSP tree root after a `repo sync`:
+#   curl -fsSL https://raw.githubusercontent.com/Jibar-OS/JibarOS/main/tools/jibar-os-bake.sh | bash
 
 set -euo pipefail
 
