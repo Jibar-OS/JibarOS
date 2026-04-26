@@ -91,6 +91,17 @@ Mechanical refactor — preserve every public symbol, just relocate. Risk is con
 
 - `getMemoryStats()` extended: per-pool depth, busy count, waiting count, backend label per loaded model. Pairs with v0.7 SDK telemetry surface.
 
+### Drop the bake patches
+
+`tools/jibar-os-bake.sh` currently applies 5 patches to upstream `frameworks/base/` files (`SystemServer.java`, `core/res/AndroidManifest.xml`, `core/res/Android.bp`, `core/res/res/values/strings.xml`, `services/core/Android.bp`) and 3 patches to `device/google/cuttlefish/` (`shared/device.mk`, `shared/sepolicy/system_ext/{file_contexts,service_contexts}`). 69 lines total. It works, but it mutates the user's working tree of upstream repos and is brittle on AOSP version bumps (context lines shift). Get this to zero by using AOSP's own extension mechanisms:
+
+- **SystemServer registration via lifecycle framework** instead of patching `SystemServer.java` — `frameworks/base/services/core/java/com/android/server/SystemServiceManager` already supports declarative service lifecycles; ship `oir.rc` / `oir_services.xml` so the platform discovers `OIRService` without an inline patch.
+- **Manifest + strings additions via `system_ext` APK overlay** instead of patching `core/res/AndroidManifest.xml` and `strings.xml` — overlay APKs land at `/system_ext/overlay/` and are merged at runtime by `OverlayManagerService`, no upstream patch needed.
+- **`service_contexts` + `file_contexts` via vendor sepolicy fragment** instead of patching the cuttlefish device tree — vendor sepolicy already supports drop-in fragments at `/vendor/etc/selinux/`. Same trick for `device.mk`'s `PRODUCT_PACKAGES` — use a vendor mk include.
+- **`Android.bp` additions** (the 2 lines that wire `oir_capabilities_xml` etc. into the framework build) — these can become Soong namespace mixins or simply move to the addon repo's own Android.bp.
+
+End state: bake script just rsyncs `oir-framework-addons` into the tree (file additions, no in-place modifications). `vendor/jibar-os/oir-patches` repo deletes itself. Re-baselining on a new AOSP tag becomes a no-op for the JibarOS overlay.
+
 ---
 
 ## v0.8 — first device + `audio.observe` + `vision.observe`
