@@ -80,7 +80,7 @@
   <project path="external/llama.cpp"
            name="platform_external_llamacpp"
            remote="jibar"
-           revision="bump-b8720"
+           revision="main"
            clone-depth="1" />
 
   <project path="external/whispercpp"

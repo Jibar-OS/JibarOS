@@ -27,6 +27,17 @@ echo "[jibar-os-bake] copy oir-framework-addons → frameworks/base/"
 # The addon tree mirrors frameworks/base/ layout exactly.
 rsync -a "$ADDONS/frameworks/" "$AOSP_ROOT/frameworks/"
 
+# Soong walks ALL Android.bp files under the source tree, including
+# under vendor/jibar-os/oir-framework-addons/ where these files live in
+# the addon repo. Once the rsync above places copies under frameworks/
+# base/, both copies define the same Soong modules ("module already
+# defined" error). Delete the source-side Android.bp files post-copy so
+# Soong only sees the destination copies. The next `repo sync` will
+# restore them, and `bake.sh` runs after sync (per bootstrap.sh), so
+# this stays idempotent across upgrades.
+echo "[jibar-os-bake] hide source Android.bp files from Soong"
+find "$ADDONS/frameworks" -name "Android.bp" -delete
+
 echo "[jibar-os-bake] apply oir-patches to frameworks/base/"
 cd "$AOSP_ROOT/frameworks/base"
 for p in "$PATCHES"/patches/*.patch; do
