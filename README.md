@@ -25,6 +25,11 @@
   <a href="https://www.loom.com/share/a4de8aa1666e4b9a8efa128f98b7f16c">▶ Watch the full ~2 min demo</a>
 </p>
 
+> **🚧 Active clean-clone validation in progress (2026-04-26)** — the public repos were migrated from a private monorepo and are being shaken down for first-time-user build issues right now. If you hit a build error, check the [issues tracker](https://github.com/Jibar-OS/JibarOS/issues) or the [`#clean-clone` discussions](https://github.com/Jibar-OS/JibarOS/discussions). Fixes are landing within 24 hours.
+
+<p align="center">
+</p>
+
 # JibarOS
 
 **An Android 16 fork where AI is a platform primitive, not an app feature.**
