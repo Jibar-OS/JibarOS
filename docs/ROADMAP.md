@@ -8,12 +8,12 @@ This is a living doc — open a discussion in [`Jibar-OS/JibarOS`](https://githu
 
 ## Critical fixes — not roadmap, do now
 
-The daemon processes untrusted user input (image bytes, WAV files) on behalf of every app on the device. A few hardening gaps land outside any milestone — they should ship as point-fix commits as soon as someone picks them up:
+The daemon processes untrusted user input (image bytes, WAV files) on behalf of every app on the device. Hardening gaps that land outside any milestone — point-fix commits.
 
-- **JPEG decode crash on malformed input.** `image_decode.cpp` uses libjpeg with the default error handler. libjpeg's default behavior on fatal decode errors is to abort the process. A malformed JPEG from any app could DOS `oird`. Fix: install a custom `jpeg_error_mgr` with `setjmp`/`longjmp`, matching the pattern already used for PNG.
-- **No max image size.** Both PNG and JPEG decode `resize((size_t)w * h * 3)` with no cap and no overflow check. A pathological image could exhaust memory in the daemon. Fix: enforce a `kMaxImagePixels` cap, check overflow before multiply, return `INVALID_INPUT` cleanly.
+- **✅ JPEG decode crash on malformed input** — *shipped 2026-04-27 in `Jibar-OS/oird@d4ccfc0`*. Custom `jpeg_error_mgr` + `setjmp`/`longjmp` mirrors the existing PNG pattern. Smoke-tested on cvd: 18-byte garbage and a forged 50000x50000 header both rejected; oird stays alive.
+- **✅ Image size cap** — *shipped 2026-04-27 in `Jibar-OS/oird@d4ccfc0`*. `image.max_pixels` knob (default 4096x4096 = 16M pixels = ~48 MB RGB; `0` disables) with overflow-safe `size_t` multiply. Documented in `KNOBS.md`.
 
-Treat as urgent — the daemon serves every app on the device, and untrusted-input crashes shouldn't wait for a milestone.
+Future critical-tier candidates land here.
 
 ---
 
