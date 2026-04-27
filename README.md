@@ -268,6 +268,12 @@ JibarOS is pre-1.0 and small. The two things we need most:
 
 **Funding:** GitHub Sponsors button is on the way (pending GitHub's org-application approval). Once live, sponsor tiers map to concrete things — a Pixel dev unit, a month of build-host VM, a backend integration sprint. Until then, the most useful contribution is a starred repo + a discussion post about your use case.
 
+**Open discussions** — drop a comment, push back on the design, or just 👍:
+
+- 🎉 [v0.7-rc3 announcement](https://github.com/Jibar-OS/JibarOS/discussions/1) — first end-to-end clean-clone build is live.
+- 🧪 [RFC: an "orchestration intelligence" benchmark](https://github.com/Jibar-OS/JibarOS/discussions/2) — what would a benchmark for *concurrent* on-device AI even measure?
+- 📦 [RFC: should apps be able to bring their own models?](https://github.com/Jibar-OS/JibarOS/discussions/3) — share-the-runtime vs per-app specialization.
+
 ## A benchmark we'd like to see exist
 
 Phones are measured by clock speed, GPU triangles, photon counts, and battery hours. None of those answer the question on-device AI now forces us to ask:
