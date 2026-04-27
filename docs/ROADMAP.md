@@ -83,7 +83,7 @@ Mechanical refactor — preserve every public symbol, just relocate. Risk is con
 
 - ✅ `cmd oir dumpsys config` — surface resolved knobs at runtime (shipped post-v0.7-rc3 in `oir-framework-addons@a79c41f`; prints all 5 globals + per-capability tuning maps).
 - `tools/fetch-models.sh` — cut a real GitHub Release with `voice-sample.wav` as an asset (worked around in v0.6.9 by committing in-tree).
-- End-to-end `repo init → bake.sh → m → launch_cvd` validation from a clean clone (not yet exercised by anyone outside the project).
+- ✅ End-to-end `bootstrap.sh → m → launch_cvd` validation from a clean clone (shipped at v0.7-rc3; cvd boots with 6 capabilities RUNNABLE, OirDemo pre-installed, `cmd oir detect /product/etc/oir/bus.jpg` returns COCO boxes out of the box).
 - 100-submit mixed-capability stress + `dumpsys memory` snapshot.
 - Cross-backend scheduler "audio.* preempts text.*" live test.
 
