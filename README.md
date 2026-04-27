@@ -25,7 +25,7 @@
   <a href="https://www.loom.com/share/a4de8aa1666e4b9a8efa128f98b7f16c">▶ Watch the full ~2 min demo</a>
 </p>
 
-> **🚧 Active clean-clone validation in progress (2026-04-26)** — the public repos were migrated from a private monorepo and are being shaken down for first-time-user build issues right now. If you hit a build error, check the [issues tracker](https://github.com/Jibar-OS/JibarOS/issues) or the [`#clean-clone` discussions](https://github.com/Jibar-OS/JibarOS/discussions). Fixes are landing within 24 hours.
+> **✅ Clean-clone build validated end-to-end (2026-04-26, tag [`v0.7-rc3`](https://github.com/Jibar-OS/JibarOS/releases/tag/v0.7-rc3))** — `bootstrap.sh` → `m -j$(nproc)` → `launch_cvd` boots with 6 capabilities `RUNNABLE`, OirDemo pre-installed at `/system_ext/priv-app/`, and `USE_TEXT/USE_AUDIO/USE_VISION` auto-granted. `cmd oir detect /product/etc/oir/bus.jpg` returns COCO-class bounding boxes out of the box.
 
 <p align="center">
 </p>
