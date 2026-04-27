@@ -81,7 +81,7 @@ Mechanical refactor — preserve every public symbol, just relocate. Risk is con
 
 ### Hardening carryover from v0.6
 
-- `cmd oir dumpsys config` — surface resolved knobs at runtime (currently requires scraping logcat).
+- ✅ `cmd oir dumpsys config` — surface resolved knobs at runtime (shipped post-v0.7-rc3 in `oir-framework-addons@a79c41f`; prints all 5 globals + per-capability tuning maps).
 - `tools/fetch-models.sh` — cut a real GitHub Release with `voice-sample.wav` as an asset (worked around in v0.6.9 by committing in-tree).
 - End-to-end `repo init → bake.sh → m → launch_cvd` validation from a clean clone (not yet exercised by anyone outside the project).
 - 100-submit mixed-capability stress + `dumpsys memory` snapshot.
