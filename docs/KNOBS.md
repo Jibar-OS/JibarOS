@@ -56,6 +56,7 @@ Load order:
 | `inference_timeout_seconds` | `120` | seconds | Per-request wall-clock cap before oird fires `TIMEOUT` error. |
 | `rate_limit_per_minute` | `60` | reqs / min per UID | Token-bucket refill rate. |
 | `rate_limit_burst` | `10` | reqs | Token-bucket capacity. SHELL_UID bypasses rate-limit by design. |
+| `image.max_pixels` | `16777216` (4096x4096) | pixels | Hard cap on decoded JPEG/PNG pixel count. Caps RGB allocation at ~48 MB and prevents pathological `w*h` overflow on untrusted input. `0` disables the cap. |
 
 ## Per-capability knobs
 
