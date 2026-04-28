@@ -35,91 +35,28 @@ Future critical-tier candidates land here.
 
 Target: tighten what we have. **No new capabilities.** Refactor the daemon, harden pool semantics, lock the public SDK contract, close v0.6 carryover.
 
-### Daemon refactor
+### Daemon refactor + decomposition
 
-✅ **Mechanical file split — shipped 2026-04-28 across 12 commits** (`Jibar-OS/oird@f6c79b6` through `Jibar-OS/oird@a0a74b9`). `oird.cpp` went from 5,220 lines to **56 lines** (main + binder lifecycle only). Final tree:
+✅ **COMPLETE — shipped 2026-04-28.** Two-phase rework. First a mechanical file split: `oird.cpp` went from 5,220 lines to 56 (main + binder lifecycle only); class declaration + AIDL glue moved to `service/`, capability bodies into `backend/{llama,whisper,vlm,ort}.cpp`, leaf utilities into `pool/`, `sched/`, `runtime/`, `tokenizer/`, `validation/`, `common/`. Then a real decomposition: cross-cutting state extracted into a `Runtime` struct, four real backend classes (`LlamaBackend`, `WhisperBackend`, `OrtBackend`, `VlmBackend`) each owning their capability bodies + knobs + per-handle pools, and a polymorphic `Resource` abstraction so eviction is a single registry walk instead of inline LRU loops in every load path.
 
-```
-system/oird/
-├── oird.cpp                          ← main + binder lifecycle (56 lines)
-├── service/
-│   ├── oir_service.h                 ← OirdService class declaration + inline helpers
-│   └── oir_service.cpp               ← ctor/dtor + AIDL glue (warm/unload/cancel/setConfig/dumpsys/...)
-├── backend/
-│   ├── llama.cpp                     ← load + loadEmbed + submit + submitEmbed + submitTranslate + runInference
-│   ├── whisper.cpp                   ← loadWhisper + submitTranscribe
-│   ├── vlm.cpp                       ← loadVlm + submitDescribeImage
-│   └── ort.cpp                       ← loadOnnx + 9 ORT capability handlers
-├── pool/{context_pool,whisper_pool}.{h,cpp}
-├── sched/scheduler.{h,cpp}
-├── runtime/{budget.h, load_registry.{h,cpp}}
-├── tokenizer/{hf_tokenizer,phoneme_loader}.{h,cpp}
-├── validation/ort_contract.{h,cpp}
-├── common/{error_codes.h, json_util.{h,cpp}}
-└── image_decode.{h,cpp}              ← already split
-```
-
-Every public symbol preserved; same class, same state, same lock. Smoke-tested after every commit (5 capabilities single-shot + concurrent stress). Differences from original plan: `runtime/` instead of `model/` (cross-cutting services, not model state); `LoadedModel` struct stayed in `service/oir_service.h` (lives with the class that owns the handle table); `common/types.h` not needed once the struct stayed put.
-
-### Daemon decomposition (real backend classes)
-
-✅ **COMPLETE — shipped 2026-04-28.** OirdService is now a thin AIDL router; every capability body, knob, and per-handle pool lives on its respective backend class. v0.8 ObserveSession lands on top of the `Resource` interface that came out of step F.
-
-**Decomposition arc** (commits in `Jibar-OS/oird`):
-
-| Step  | What                                                          | Commit     |
-|-------|---------------------------------------------------------------|------------|
-| 1     | `Runtime` struct extracted (cross-cutting state)              | `8c19072`  |
-| 2a    | `InFlightGuard` machinery moved to Runtime                    | `75eab94`  |
-| 2b1   | `LlamaBackend` skeleton (mLlamaPools moved)                   | `66d04b5`  |
-| F     | `Resource` abstraction + eviction coordinator                 | `a576466`  |
-| 2b2   | `LlamaBackend` full migration (6 AIDL methods + 12 knobs)     | `1eea94b`  |
-| 3a    | `WhisperBackend` skeleton (mWhisperPools moved)               | `c75bd43`  |
-| 3b    | `WhisperBackend` full migration (2 AIDL methods + 4 knobs)    | `81adca3`  |
-| 4a/5a | `OrtBackend` + `VlmBackend` skeletons (mOcrRec moved)         | `15662c2`  |
-| 4b    | `OrtBackend` full migration (10 AIDL methods + 19 knobs + mOrtEnv) | `5c594ee` |
-| 5b    | `VlmBackend` full migration (2 AIDL methods + 6 knobs)        | `edc4224`  |
-| —     | Cleanup: dead code, stale comments, build hygiene             | `c16968e`  |
-| —     | Binder thread pool scaling (`4` → `clamp(cores/2, 4, 8)`)     | `4efce66`  |
-
-**End state matches the target:**
+End state:
 
 ```cpp
-class Runtime {  // shared cross-cutting state
-    std::mutex mLock; std::unordered_map<int64_t, LoadedModel> mModels;
-    Budget mBudget; std::unique_ptr<Scheduler> mScheduler; LoadRegistry mLoadRegistry;
-    std::vector<std::unique_ptr<Resource>> mResources;  // eviction registry
-    /* + handle counters, active requests, warm TTL, in-flight guards */
-};
-class LlamaBackend   { Runtime& mRt; std::unordered_map<int64_t, ContextPool> mPools; /* 12 knobs */ };
-class WhisperBackend { Runtime& mRt; std::unordered_map<int64_t, WhisperPool> mPools; /* 4 knobs */ };
-class OrtBackend     { Runtime& mRt; std::unique_ptr<Ort::Env> mOrtEnv; /* mOcrRec + 19 knobs */ };
+class Runtime { /* mLock, mModels, Budget, Scheduler, LoadRegistry, Resource registry, ... */ };
+class LlamaBackend   { Runtime& mRt; ContextPool map; /* 12 knobs */ };
+class WhisperBackend { Runtime& mRt; WhisperPool map; /* 4 knobs */ };
+class OrtBackend     { Runtime& mRt; std::unique_ptr<Ort::Env>; /* mOcrRec + 19 knobs */ };
 class VlmBackend     { Runtime& mRt; LlamaBackend& mLlama; /* 6 knobs */ };
-class OirdService : BnOirWorker {
-    Runtime mRt; LlamaBackend mLlama; WhisperBackend mWhisper; OrtBackend mOrt; VlmBackend mVlm;
-    // Every AIDL method is a 1-line forward to the right backend.
-};
+class OirdService : BnOirWorker { Runtime mRt; <four backends>; /* AIDL methods are 1-line forwards */ };
 ```
 
-Each backend owns its capability bodies, knobs, and per-handle pool state. Per-backend `register{Llama,Whisper,Ort,Vlm}ModelResourceLocked` registers a ModelResource with backend-specific tear-down — the kitchen-sink eviction lambda is gone. `setCapabilityFloat` dispatches by trying `mLlama.setKnobFloat → mWhisper.setKnobFloat → mOrt.setKnobFloat → mVlm.setKnobFloat` in turn; unknown keys log and ignore (so OEMs can list config keys ahead of runtime support).
+**This is what unblocks v0.8 ObserveSession** — sessions implement `Resource`, override `pause()` to drop audio buffers + release pinned models without killing the session.
 
-**Cleanup pass** (post-decomposition, commit `c16968e`): removed 3 dead OirdService methods (`runInference`, `cleanupRequest`, kitchen-sink `registerModelResourceLocked`); relocated 4 inline helpers (`fileSizeBytes`, `estimateKvBytesPerContext`, `llama_batch_*`, `readDetectClassLabels`) from `oir_service.h` into the backend headers/cpps that actually use them; dropped 8 heavy includes (`<llama.h>`, `<whisper.h>`, `<mtmd.h>`, `<onnxruntime_cxx_api.h>`, etc.) from the AIDL header. `oir_service.h`: 603 → 290 lines. Net: −174 lines, −300 in `oir_service.h` alone.
-
-**Binder thread pool** (commit `4efce66`): replaced the hardcoded `ABinderProcess_setThreadPoolMaxThreadCount(4)` with `clamp(hardware_concurrency()/2, 4, 8)` and a startup log line. Can't be a runtime knob (must be set before `startThreadPool()`); auto-scaling handles small dev environments and big phones with the same sane default.
-
-**Open design questions — all resolved:**
-- ✅ **Handle table ownership** — flat in `Runtime`; all backends share `mRt.mModels`. No per-backend handle namespace.
-- ✅ **Cross-backend eviction** — `Resource` interface; each backend's load() registers a `ModelResource` with backend-specific tear-down. Runtime walks the registry in `(priority, lastAccessMs)` order. v0.8 ObserveSession inherits `Resource`.
-- ✅ **Knob ownership** — each backend owns its capability's knobs (private fields with accessors); `setCapabilityFloat` dispatches across all 4 backends in sequence.
-- ✅ **mOrtEnv lifetime** — single shared instance owned by `OrtBackend`; lazy-init on first `loadOnnx`.
-
-**Validation:** smoke-tested 5 capabilities (`text.complete`, `text.embed`, `audio.transcribe`, `vision.detect`, `vision.embed`) on cvd after every commit. Build: 1m38 clean rebuild after step 5b; 23s incremental after cleanup.
+Per-commit detail (12-step decomposition arc, cleanup pass, binder thread pool auto-scaling, `setCapabilityFloat` dispatch chain) lives in [`oird/CHANGELOG.md`](https://github.com/Jibar-OS/oird/blob/main/CHANGELOG.md). Smoke-tested 5 capabilities on cvd after every commit; final clean rebuild 1m38, incremental rebuild after cleanup 23s.
 
 ### Pool + scheduler semantics
 
-- ✅ **`InFlightGuard` RAII** for `inFlightCount` — *shipped 2026-04-28 in `Jibar-OS/oird@4b7c4f5`*. 11 submit paths converted from manual `++`/`releaseInflight()` to `shared_ptr<InFlightGuard>` captured into Scheduler::Task lambdas; v0.6.8 ordering preserved via explicit `guard->release()` before terminal callback. Smoke-tested on cvd: 5 single-shot capabilities + 6 concurrent text.complete + 5 cross-capability concurrent, no leaked inflight.
-- ✅ **Empty-pool rejection** at construction — *shipped 2026-04-27 in `Jibar-OS/oird@7fe78f9`*. `ContextPool` + `WhisperPool` ctors `LOG(FATAL)` on empty input (defense-in-depth against future regressions; current load paths already validate per-slot init).
-- ✅ **FIFO tiebreaker** in `ContextPool::Waiter` ordering — *shipped 2026-04-27 in `Jibar-OS/oird@7fe78f9`*. Comparator now `(priority, enqueueMs, id)`; smoke-tested on cvd with 6 concurrent submits against pool=4.
+- ✅ **InFlightGuard RAII**, **empty-pool rejection at construction**, **FIFO tiebreaker** in `ContextPool::Waiter` ordering — all landed. See [`oird/CHANGELOG.md`](https://github.com/Jibar-OS/oird/blob/main/CHANGELOG.md) for hashes.
 - **Document priority semantics honestly** — current strict-priority queue is bounded-wait, not starvation-free. Update `KNOBS.md` and consider adding a simple aging boost (`effectivePriority = base − ageMs/1000`) if real workloads report starvation.
 
 ### SDK stabilization
@@ -138,7 +75,7 @@ Each backend owns its capability bodies, knobs, and per-handle pool state. Per-b
 
 ### Observability
 
-- `getMemoryStats()` extended: per-pool depth, busy count, waiting count, backend label per loaded model. Pairs with v0.7 SDK telemetry surface.
+- ✅ `getMemoryStats()` extended — per-pool depth, busy count, waiting count, backend label per loaded model now in the structured `MemoryStats` parcelable. Shipped 2026-04-28 (`oir-framework-addons@6e4d73a` + `oird@74ad6bf`). Validated end-to-end on cvd: 6 concurrent submits vs pool=4 → `busy=4` reflected in `cmd oir memory` output. SDK consumers no longer need to call `dumpRuntimeStats` and TSV-parse.
 
 ### Drop the bake patches
 
