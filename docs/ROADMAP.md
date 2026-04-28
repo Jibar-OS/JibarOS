@@ -68,7 +68,7 @@ Mechanical refactor — preserve every public symbol, just relocate. Risk is con
 
 ### Pool + scheduler semantics
 
-- **`InFlightGuard` RAII** for `inFlightCount`. Today's manual `++`/`--` paired with comments that say "callers must hold this" is exactly the invariant that breaks when someone adds a new submit method. RAII removes the trap.
+- ✅ **`InFlightGuard` RAII** for `inFlightCount` — *shipped 2026-04-28 in `Jibar-OS/oird@4b7c4f5`*. 11 submit paths converted from manual `++`/`releaseInflight()` to `shared_ptr<InFlightGuard>` captured into Scheduler::Task lambdas; v0.6.8 ordering preserved via explicit `guard->release()` before terminal callback. Smoke-tested on cvd: 5 single-shot capabilities + 6 concurrent text.complete + 5 cross-capability concurrent, no leaked inflight.
 - ✅ **Empty-pool rejection** at construction — *shipped 2026-04-27 in `Jibar-OS/oird@7fe78f9`*. `ContextPool` + `WhisperPool` ctors `LOG(FATAL)` on empty input (defense-in-depth against future regressions; current load paths already validate per-slot init).
 - ✅ **FIFO tiebreaker** in `ContextPool::Waiter` ordering — *shipped 2026-04-27 in `Jibar-OS/oird@7fe78f9`*. Comparator now `(priority, enqueueMs, id)`; smoke-tested on cvd with 6 concurrent submits against pool=4.
 - **Document priority semantics honestly** — current strict-priority queue is bounded-wait, not starvation-free. Update `KNOBS.md` and consider adding a simple aging boost (`effectivePriority = base − ageMs/1000`) if real workloads report starvation.
