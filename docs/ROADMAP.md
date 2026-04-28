@@ -1,6 +1,6 @@
 # JibarOS roadmap
 
-**Last updated:** 2026-04-25
+**Last updated:** 2026-04-28
 
 This is a living doc — open a discussion in [`Jibar-OS/JibarOS`](https://github.com/Jibar-OS/JibarOS/discussions) if you think something should be added, dropped, or re-prioritized.
 
@@ -63,51 +63,57 @@ Every public symbol preserved; same class, same state, same lock. Smoke-tested a
 
 ### Daemon decomposition (real backend classes)
 
-⚠️ **PARTIALLY DONE — foundation laid, ~30% complete.** The architectural pieces are in place; remaining work is repeating the LlamaBackend pattern for the other three backends.
+✅ **COMPLETE — shipped 2026-04-28.** OirdService is now a thin AIDL router; every capability body, knob, and per-handle pool lives on its respective backend class. v0.8 ObserveSession lands on top of the `Resource` interface that came out of step F.
 
-**Shipped 2026-04-28:**
-- ✅ **`Runtime` struct** (`Jibar-OS/oird@8c19072`) — cross-cutting state (mLock, mModels, mBudget, mScheduler, mLoadRegistry, handle counters, mActiveRequests, mWarmTtlSeconds) extracted into one struct passed to backends by reference. ~280 field references migrated from bare-name to `mRt.X`.
-- ✅ **`InFlightGuard` machinery on Runtime** (`Jibar-OS/oird@75eab94`) — `releaseInflight` / `acquireInflightLocked` / `cleanupRequest` moved from OirdService to Runtime; InFlightGuard now holds a `Runtime*` back-pointer. Backend classes can produce/release guards through their Runtime& reference without needing the AIDL stub.
-- ✅ **`LlamaBackend` skeleton** (`Jibar-OS/oird@66d04b5`) — `mLlamaPools` field (the per-handle llama context pool map) moved out of OirdService into a dedicated class. Method bodies still on OirdService for now (load eviction loops needed cross-backend tear-down).
-- ✅ **`Resource` abstraction + eviction coordinator** (`Jibar-OS/oird@a576466`) — `runtime/resource.h` defines a polymorphic Resource interface (residentBytes / lastAccessMs / isEvictable / priority / pause / evict / description). `runtime/model_resource.{h,cpp}` is the adapter for handle-keyed LoadedModel state with a backend-supplied tear-down lambda. `Runtime::evictForBytesLocked(needed)` walks resources in (priority asc, lastAccessMs asc) order, two-pass (pause → evict). The 5 inline 35-line LRU eviction loops in load methods collapse to a single call. **This is what unblocks v0.8 ObserveSession** — sessions implement `Resource`, override `pause()` to drop audio buffers + release pinned models without killing the session.
-- ✅ **`WhisperBackend` skeleton** (`Jibar-OS/oird@c75bd43`) — `mWhisperPools` (per-handle whisper context pool map) moved out. Mirror of LlamaBackend skeleton; eraseModel hook for cross-backend eviction.
-- ✅ **`OrtBackend` + `VlmBackend` skeletons** (`Jibar-OS/oird@15662c2`) — `mOcrRec` (per-handle OCR recognizer cache, the only handle-keyed ORT state today) moves into OrtBackend. VlmBackend is a placeholder slot — no unique state today since VLM ContextPools live in `mLlama.mPools`; ready for step 5b knob + method-body migration.
+**Decomposition arc** (commits in `Jibar-OS/oird`):
 
-**All 4 backend skeleton classes now in place.** Decomposition foundation is complete.
+| Step  | What                                                          | Commit     |
+|-------|---------------------------------------------------------------|------------|
+| 1     | `Runtime` struct extracted (cross-cutting state)              | `8c19072`  |
+| 2a    | `InFlightGuard` machinery moved to Runtime                    | `75eab94`  |
+| 2b1   | `LlamaBackend` skeleton (mLlamaPools moved)                   | `66d04b5`  |
+| F     | `Resource` abstraction + eviction coordinator                 | `a576466`  |
+| 2b2   | `LlamaBackend` full migration (6 AIDL methods + 12 knobs)     | `1eea94b`  |
+| 3a    | `WhisperBackend` skeleton (mWhisperPools moved)               | `c75bd43`  |
+| 3b    | `WhisperBackend` full migration (2 AIDL methods + 4 knobs)    | `81adca3`  |
+| 4a/5a | `OrtBackend` + `VlmBackend` skeletons (mOcrRec moved)         | `15662c2`  |
+| 4b    | `OrtBackend` full migration (10 AIDL methods + 19 knobs + mOrtEnv) | `5c594ee` |
+| 5b    | `VlmBackend` full migration (2 AIDL methods + 6 knobs)        | `edc4224`  |
+| —     | Cleanup: dead code, stale comments, build hygiene             | `c16968e`  |
+| —     | Binder thread pool scaling (`4` → `clamp(cores/2, 4, 8)`)     | `4efce66`  |
 
-**Still on `OirdService` (method-body and knob migration):**
-- **All llama method bodies** (currently `OirdService::method` definitions in `backend/llama.cpp`) → `LlamaBackend::method`. Now unblocked by step F (eviction is `mRt.evictForBytesLocked(needed)`, not inline).
-- **All whisper method bodies** (loadWhisper, submitTranscribe in `backend/whisper.cpp`) → `WhisperBackend::method`.
-- **All ORT method bodies** (loadOnnx, loadVisionEmbed, loadVad + 7 submit methods in `backend/ort.cpp`) → `OrtBackend::method`. Largest single migration.
-- **All VLM method bodies** (loadVlm, submitDescribeImage in `backend/vlm.cpp`) → `VlmBackend::method`. Will need careful handling since VLM creates pools that LlamaBackend owns.
-- **Per-backend knobs** (~25 fields total): `mTextComplete*` / `mTextEmbed*` / `mLlamaBatchSize` → LlamaBackend; `mAudioTranscribe*` → WhisperBackend; `mDetectScoreThresh` / `mVadVoiceThreshold` / `mAudioSynthesize*` / `mVisionEmbed*` etc. → OrtBackend; `mVisionDescribe*` → VlmBackend. `setCapabilityFloat` dispatches by capability prefix.
-- **mOrtEnv** (single ORT environment, lazy-init) → OrtBackend.
-- **Per-backend ModelResource tearDown** — currently kitchen-sink in OirdService::registerModelResourceLocked frees state across all backends. After method migration, each backend's load() registers its own ModelResource with backend-specific tearDown.
-
-**Target end state** (unchanged from original):
+**End state matches the target:**
 
 ```cpp
-class Runtime {  // shared cross-cutting state — DONE
+class Runtime {  // shared cross-cutting state
     std::mutex mLock; std::unordered_map<int64_t, LoadedModel> mModels;
-    Budget mBudget; Scheduler mScheduler; LoadRegistry mLoadRegistry;
-    std::vector<std::unique_ptr<Resource>> mResources;  // DONE — eviction registry
-    /* + handle counters, active requests, warm TTL */
+    Budget mBudget; std::unique_ptr<Scheduler> mScheduler; LoadRegistry mLoadRegistry;
+    std::vector<std::unique_ptr<Resource>> mResources;  // eviction registry
+    /* + handle counters, active requests, warm TTL, in-flight guards */
 };
-class LlamaBackend  { Runtime& rt; std::unordered_map<int64_t, ContextPool> mPools; /* knobs */ };  // skeleton DONE
-class WhisperBackend { Runtime& rt; std::unordered_map<int64_t, WhisperPool> mPools; /* knobs */ };
-class OrtBackend     { Runtime& rt; /* mOcrRec, mOrtEnv, mPiperPhonemes, knobs */ };
-class VlmBackend     { Runtime& rt; /* mtmd state, knobs */ };
+class LlamaBackend   { Runtime& mRt; std::unordered_map<int64_t, ContextPool> mPools; /* 12 knobs */ };
+class WhisperBackend { Runtime& mRt; std::unordered_map<int64_t, WhisperPool> mPools; /* 4 knobs */ };
+class OrtBackend     { Runtime& mRt; std::unique_ptr<Ort::Env> mOrtEnv; /* mOcrRec + 19 knobs */ };
+class VlmBackend     { Runtime& mRt; LlamaBackend& mLlama; /* 6 knobs */ };
 class OirdService : BnOirWorker {
     Runtime mRt; LlamaBackend mLlama; WhisperBackend mWhisper; OrtBackend mOrt; VlmBackend mVlm;
-    // AIDL stubs become 1-line wrappers calling the right backend.
+    // Every AIDL method is a 1-line forward to the right backend.
 };
 ```
 
-**Open design questions resolved** (settled by step F):
-- ✅ **Handle table ownership** — stays flat in Runtime; all backends share `mRt.mModels`. No per-backend handle namespace.
-- ✅ **Cross-backend eviction** — Resource interface; each backend's load() registers a ModelResource with backend-specific tear-down. Runtime walks the registry in priority order. v0.8 ObserveSession just inherits Resource.
-- ✅ **Knob ownership** — each backend owns its capability's knobs (private fields with accessors); `setCapabilityFloat` calls `mLlama.setKnobFloat(key, value)` etc. and only handles cross-cutting keys at the OirdService level.
-- ⏳ **mOrtEnv lifetime** — pending OrtBackend extraction; single shared instance, moves with the backend.
+Each backend owns its capability bodies, knobs, and per-handle pool state. Per-backend `register{Llama,Whisper,Ort,Vlm}ModelResourceLocked` registers a ModelResource with backend-specific tear-down — the kitchen-sink eviction lambda is gone. `setCapabilityFloat` dispatches by trying `mLlama.setKnobFloat → mWhisper.setKnobFloat → mOrt.setKnobFloat → mVlm.setKnobFloat` in turn; unknown keys log and ignore (so OEMs can list config keys ahead of runtime support).
+
+**Cleanup pass** (post-decomposition, commit `c16968e`): removed 3 dead OirdService methods (`runInference`, `cleanupRequest`, kitchen-sink `registerModelResourceLocked`); relocated 4 inline helpers (`fileSizeBytes`, `estimateKvBytesPerContext`, `llama_batch_*`, `readDetectClassLabels`) from `oir_service.h` into the backend headers/cpps that actually use them; dropped 8 heavy includes (`<llama.h>`, `<whisper.h>`, `<mtmd.h>`, `<onnxruntime_cxx_api.h>`, etc.) from the AIDL header. `oir_service.h`: 603 → 290 lines. Net: −174 lines, −300 in `oir_service.h` alone.
+
+**Binder thread pool** (commit `4efce66`): replaced the hardcoded `ABinderProcess_setThreadPoolMaxThreadCount(4)` with `clamp(hardware_concurrency()/2, 4, 8)` and a startup log line. Can't be a runtime knob (must be set before `startThreadPool()`); auto-scaling handles small dev environments and big phones with the same sane default.
+
+**Open design questions — all resolved:**
+- ✅ **Handle table ownership** — flat in `Runtime`; all backends share `mRt.mModels`. No per-backend handle namespace.
+- ✅ **Cross-backend eviction** — `Resource` interface; each backend's load() registers a `ModelResource` with backend-specific tear-down. Runtime walks the registry in `(priority, lastAccessMs)` order. v0.8 ObserveSession inherits `Resource`.
+- ✅ **Knob ownership** — each backend owns its capability's knobs (private fields with accessors); `setCapabilityFloat` dispatches across all 4 backends in sequence.
+- ✅ **mOrtEnv lifetime** — single shared instance owned by `OrtBackend`; lazy-init on first `loadOnnx`.
+
+**Validation:** smoke-tested 5 capabilities (`text.complete`, `text.embed`, `audio.transcribe`, `vision.detect`, `vision.embed`) on cvd after every commit. Build: 1m38 clean rebuild after step 5b; 23s incremental after cleanup.
 
 ### Pool + scheduler semantics
 
