@@ -37,34 +37,58 @@ Target: tighten what we have. **No new capabilities.** Refactor the daemon, hard
 
 ### Daemon refactor
 
-`oird.cpp` is ~4,900 lines today — pools, scheduler, tokenizer, all 12 capability handlers, ORT validation, phoneme parsing, model load registry, main(), all in one file. Split into:
+✅ **Mechanical file split — shipped 2026-04-28 across 12 commits** (`Jibar-OS/oird@f6c79b6` through `Jibar-OS/oird@a0a74b9`). `oird.cpp` went from 5,220 lines to **56 lines** (main + binder lifecycle only). Final tree:
 
 ```
 system/oird/
-├── oird.cpp                          ← main(), OirdService AIDL stubs (slim)
-├── pool/
-│   ├── context_pool.{h,cpp}          ← ContextPool + Lease + Waiter
-│   └── whisper_pool.{h,cpp}          ← WhisperPool + WhisperLease
-├── sched/
-│   └── scheduler.{h,cpp}             ← cross-backend priority queue + worker pool
-├── model/
-│   ├── loaded_model.h
-│   └── load_registry.{h,cpp}         ← LoadInProgress + claim/publish (v0.6.9 dedup)
+├── oird.cpp                          ← main + binder lifecycle (56 lines)
+├── service/
+│   ├── oir_service.h                 ← OirdService class declaration + inline helpers
+│   └── oir_service.cpp               ← ctor/dtor + AIDL glue (warm/unload/cancel/setConfig/dumpsys/...)
 ├── backend/
-│   ├── llama.{h,cpp}                 ← complete + embed + translate
-│   ├── whisper.{h,cpp}               ← audio.transcribe
-│   ├── vlm.{h,cpp}                   ← vision.describe via libmtmd
-│   └── ort.{h,cpp}                   ← detect / vembed / vad / synthesize / classify / rerank / ocr
-├── tokenizer/
-│   ├── hf_tokenizer.{h,cpp}
-│   └── phoneme_loader.{h,cpp}
-├── validation/
-│   └── ort_contract.{h,cpp}
-├── common/{error_codes.h, types.h}
+│   ├── llama.cpp                     ← load + loadEmbed + submit + submitEmbed + submitTranslate + runInference
+│   ├── whisper.cpp                   ← loadWhisper + submitTranscribe
+│   ├── vlm.cpp                       ← loadVlm + submitDescribeImage
+│   └── ort.cpp                       ← loadOnnx + 9 ORT capability handlers
+├── pool/{context_pool,whisper_pool}.{h,cpp}
+├── sched/scheduler.{h,cpp}
+├── runtime/{budget.h, load_registry.{h,cpp}}
+├── tokenizer/{hf_tokenizer,phoneme_loader}.{h,cpp}
+├── validation/ort_contract.{h,cpp}
+├── common/{error_codes.h, json_util.{h,cpp}}
 └── image_decode.{h,cpp}              ← already split
 ```
 
-Mechanical refactor — preserve every public symbol, just relocate. Risk is contained if the 12 `submit*` smoke-tests still pass after.
+Every public symbol preserved; same class, same state, same lock. Smoke-tested after every commit (5 capabilities single-shot + concurrent stress). Differences from original plan: `runtime/` instead of `model/` (cross-cutting services, not model state); `LoadedModel` struct stayed in `service/oir_service.h` (lives with the class that owns the handle table); `common/types.h` not needed once the struct stayed put.
+
+### Daemon decomposition (real backend classes)
+
+⚠️ **NOT YET DONE.** The mechanical split achieves navigability but `OirdService` is still a god-class — every backend's per-handle state (`mLlamaPools`, `mWhisperPools`, `mOcrRec`, `mPiperPhonemes`, `mOrtEnv`) lives as a private member, the LRU eviction loop is **duplicated 7×** across load methods, and "audio.* preempts text.*" is implicit shared-mutex priority queue access rather than an explicit `Scheduler` contract.
+
+The v0.8 observe APIs (`audio.observe` / `vision.observe` / `world.observe`) need a real backend boundary for cascade gating. Target shape:
+
+```cpp
+class Runtime {  // shared cross-cutting state
+    std::mutex mLock; std::unordered_map<int64_t, LoadedModel> mModels;
+    Budget budget; Scheduler scheduler; LoadRegistry loadRegistry;
+    int64_t mNextModelHandle = 1; /* + global config knobs */
+};
+class LlamaBackend  { Runtime& rt; std::unordered_map<int64_t, ContextPool> mPools; ... };
+class WhisperBackend { Runtime& rt; std::unordered_map<int64_t, WhisperPool> mPools; ... };
+class OrtBackend     { Runtime& rt; /* mOcrRec, mOrtEnv, mPiperPhonemes */ ... };
+class VlmBackend     { Runtime& rt; /* mtmd state */ ... };
+
+class OirdService : BnOirWorker {
+    Runtime mRt; LlamaBackend mLlama; WhisperBackend mWhisper; OrtBackend mOrt; VlmBackend mVlm;
+    // AIDL stubs route by handle/capability to the right backend.
+};
+```
+
+Open design questions to resolve before starting:
+- **Handle table ownership.** Stay flat in Runtime (shared, all backends touch it through `rt.mModels`), or per-backend with a router map in OirdService? Affects every `mModels.find(h)` call site (~50).
+- **Cross-backend eviction.** LRU walks across all backends today. Either Budget knows the per-backend tear-down (callback per backend), or each backend implements an `evictForBytes(int64_t needed) -> int64_t freed` method that Budget calls in priority order.
+- **mOrtEnv lifetime.** Currently lazily created on first ORT load. Single shared instance — moves to OrtBackend.
+- **Knob ownership.** Per-capability tuning (mTextCompleteContextsPerModel, mDetectScoreThresh, etc.) is keyed by capability name. Either each backend owns its capability's knobs, or knob storage stays in Runtime and backends read on each access. Design choice with v0.7 `setCapabilityFloat` AIDL surface implications.
 
 ### Pool + scheduler semantics
 
