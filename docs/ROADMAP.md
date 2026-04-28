@@ -70,13 +70,19 @@ Every public symbol preserved; same class, same state, same lock. Smoke-tested a
 - ✅ **`InFlightGuard` machinery on Runtime** (`Jibar-OS/oird@75eab94`) — `releaseInflight` / `acquireInflightLocked` / `cleanupRequest` moved from OirdService to Runtime; InFlightGuard now holds a `Runtime*` back-pointer. Backend classes can produce/release guards through their Runtime& reference without needing the AIDL stub.
 - ✅ **`LlamaBackend` skeleton** (`Jibar-OS/oird@66d04b5`) — `mLlamaPools` field (the per-handle llama context pool map) moved out of OirdService into a dedicated class. Method bodies still on OirdService for now (load eviction loops needed cross-backend tear-down).
 - ✅ **`Resource` abstraction + eviction coordinator** (`Jibar-OS/oird@a576466`) — `runtime/resource.h` defines a polymorphic Resource interface (residentBytes / lastAccessMs / isEvictable / priority / pause / evict / description). `runtime/model_resource.{h,cpp}` is the adapter for handle-keyed LoadedModel state with a backend-supplied tear-down lambda. `Runtime::evictForBytesLocked(needed)` walks resources in (priority asc, lastAccessMs asc) order, two-pass (pause → evict). The 5 inline 35-line LRU eviction loops in load methods collapse to a single call. **This is what unblocks v0.8 ObserveSession** — sessions implement `Resource`, override `pause()` to drop audio buffers + release pinned models without killing the session.
+- ✅ **`WhisperBackend` skeleton** (`Jibar-OS/oird@c75bd43`) — `mWhisperPools` (per-handle whisper context pool map) moved out. Mirror of LlamaBackend skeleton; eraseModel hook for cross-backend eviction.
+- ✅ **`OrtBackend` + `VlmBackend` skeletons** (`Jibar-OS/oird@15662c2`) — `mOcrRec` (per-handle OCR recognizer cache, the only handle-keyed ORT state today) moves into OrtBackend. VlmBackend is a placeholder slot — no unique state today since VLM ContextPools live in `mLlama.mPools`; ready for step 5b knob + method-body migration.
 
-**Still on `OirdService` (next backend extractions, in order of size):**
-- **`mWhisperPools` + audio.transcribe knobs + 2 method bodies** → `WhisperBackend`. Smallest. Same pattern as LlamaBackend skeleton.
-- **`mOcrRec`, `mOrtEnv`, all per-cap ORT knobs (mDetectScoreThresh, mVadVoiceThreshold, mAudioSynthesizeSampleRate etc.) + 10 method bodies** → `OrtBackend`. Largest.
-- **VLM-specific state + 2 method bodies** → `VlmBackend`. Coupled to LlamaBackend (VLMs use ContextPool); resolved by `mLlama.mPools` being public access until VlmBackend extraction.
+**All 4 backend skeleton classes now in place.** Decomposition foundation is complete.
+
+**Still on `OirdService` (method-body and knob migration):**
 - **All llama method bodies** (currently `OirdService::method` definitions in `backend/llama.cpp`) → `LlamaBackend::method`. Now unblocked by step F (eviction is `mRt.evictForBytesLocked(needed)`, not inline).
-- **12 llama knobs** (mTextCompleteNCtx, mTextEmbed*, mTextCompleteTopP, mLlamaBatchSize, etc.) → `LlamaBackend` private fields with accessors. `setCapabilityFloat` dispatches by capability prefix to the right backend's `setKnobFloat`.
+- **All whisper method bodies** (loadWhisper, submitTranscribe in `backend/whisper.cpp`) → `WhisperBackend::method`.
+- **All ORT method bodies** (loadOnnx, loadVisionEmbed, loadVad + 7 submit methods in `backend/ort.cpp`) → `OrtBackend::method`. Largest single migration.
+- **All VLM method bodies** (loadVlm, submitDescribeImage in `backend/vlm.cpp`) → `VlmBackend::method`. Will need careful handling since VLM creates pools that LlamaBackend owns.
+- **Per-backend knobs** (~25 fields total): `mTextComplete*` / `mTextEmbed*` / `mLlamaBatchSize` → LlamaBackend; `mAudioTranscribe*` → WhisperBackend; `mDetectScoreThresh` / `mVadVoiceThreshold` / `mAudioSynthesize*` / `mVisionEmbed*` etc. → OrtBackend; `mVisionDescribe*` → VlmBackend. `setCapabilityFloat` dispatches by capability prefix.
+- **mOrtEnv** (single ORT environment, lazy-init) → OrtBackend.
+- **Per-backend ModelResource tearDown** — currently kitchen-sink in OirdService::registerModelResourceLocked frees state across all backends. After method migration, each backend's load() registers its own ModelResource with backend-specific tearDown.
 
 **Target end state** (unchanged from original):
 
