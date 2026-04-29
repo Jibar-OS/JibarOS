@@ -1,6 +1,6 @@
 # JibarOS roadmap
 
-**Last updated:** 2026-04-28
+**Last updated:** 2026-04-29
 
 This is a living doc — open a discussion in [`Jibar-OS/JibarOS`](https://github.com/Jibar-OS/JibarOS/discussions) if you think something should be added, dropped, or re-prioritized.
 
@@ -53,6 +53,20 @@ class OirdService : BnOirWorker { Runtime mRt; <four backends>; /* AIDL methods 
 **This is what unblocks v0.8 ObserveSession** — sessions implement `Resource`, override `pause()` to drop audio buffers + release pinned models without killing the session.
 
 Per-commit detail (12-step decomposition arc, cleanup pass, binder thread pool auto-scaling, `setCapabilityFloat` dispatch chain) lives in [`oird/CHANGELOG.md`](https://github.com/Jibar-OS/oird/blob/main/CHANGELOG.md). Smoke-tested 5 capabilities on cvd after every commit; final clean rebuild 1m38, incremental rebuild after cleanup 23s.
+
+### Framework-side decomposition
+
+✅ **COMPLETE — shipped 2026-04-29.** Symmetric arc on the platform-service side: `OIRService.java` went from a 1901-line god-class to a 416-line thin AIDL router. Three phases:
+
+- **Phase 1 (leaf extracts)**: `RateLimiter`, `LoadDedup` + `LoadFuture`, `HandleRegistry` (collapses 7 per-backend handle maps into one), `WorkerLifecycle` (owns IOirWorker reference + lock + attach-retry + death recipient).
+- **Phase 2 (orchestration)**: `ModelEnsurer` (collapses 7 ensureXxxModelFor methods into one strategy-driven `ensure(capability, ErrorReporter)`), `CallbackBridges` (5 worker→app bridges + safeAppXxxError + cancellation forwarder), `PermissionEnforcer` (real abstraction — composed-perm-ready for v0.8 ObserveSession), `CapabilityRegistry.getOrFallback` (variant-aware lookup, dormant infrastructure).
+- **Phase 3 (namespace dispatchers)**: `TextDispatcher` / `AudioDispatcher` / `VisionDispatcher` extending a `NamespaceDispatcher` base class that centralizes the preflight pipeline (registry resolve → permission → rate-limit → ensure model). Every IOIRService.Stub method is now a thin namespace router.
+- **Throttle UX**: `RateLimiter.nextTokenWaitMs` + real `retryAfterMs` in throttle messages; SDK gains opt-in `retryThrottle: Int = 0` parameter on every suspend capability method (`810ae9c` in oir-sdk).
+- **Variant fallback audit fix**: every entry point — `submit`, `warm`, `isCapabilityRunnable`, model load, model cache, permission check — now resolves variants identically through `getOrFallback`, dormant until v0.7 variant capabilities ship.
+
+Reserved architectural slots: v0.8 audio.observe / vision.observe land alongside Audio/Vision dispatchers (or as separate ObserveDispatcher classes); v1.0 world.observe gets its own WorldDispatcher under a new namespace.
+
+Per-commit detail in [`oir-framework-addons/CHANGELOG.md`](https://github.com/Jibar-OS/oir-framework-addons/blob/main/CHANGELOG.md). Validated end-to-end via `cmd oir` + the OirDemo Mission Control sample app over webrtc on cvd.
 
 ### Pool + scheduler semantics
 

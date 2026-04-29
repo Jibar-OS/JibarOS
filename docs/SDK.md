@@ -141,7 +141,7 @@ Every SDK call throws subclasses of `OirException`:
 | `OirCapabilityUnavailableException` | Capability declared but no model available | `MODEL_MISSING` or `NO_DEFAULT_MODEL` state |
 | `OirPermissionDeniedException` | Missing `oir.permission.USE_*` | Not platform-signed, not granted |
 | `OirWorkerUnavailableException` | oird not reachable | Worker crashed mid-flight / not attached yet |
-| `OirRateLimitedException` | Per-UID rate limit tripped | >60 reqs/min sustained |
+| `OirThrottledException` | Per-UID rate limit tripped | >60 reqs/min sustained. Exposes `retryAfterMs` (real wait until the next token, computed by `RateLimiter.nextTokenWaitMs`). Apps can catch + retry, or pass `retryThrottle: Int = N` to any suspend capability method (`OpenIntelligence.text.complete(prompt, options, retryThrottle = 3)`) to opt into automatic retry up to N times, respecting `retryAfterMs` between attempts. |
 | `OirCancelledException` | Cancelled via coroutine cancellation | Expected; swallow or re-throw |
 
 Streaming APIs throw from within their Flow; catch via `try { … } catch (e: OirException) { … }` around the `.collect {}`.

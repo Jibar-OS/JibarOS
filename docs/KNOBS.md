@@ -54,8 +54,8 @@ Load order:
 | `memory_budget_mb` | `4096` | MB | Resident-memory budget. `0` disables the check (unlimited). When load would exceed this, LRU eviction runs (skipping in-flight + warmed models). |
 | `warm_ttl_seconds` | `60` | seconds | How long `warm()` protects a model from eviction after an explicit warm. |
 | `inference_timeout_seconds` | `120` | seconds | Per-request wall-clock cap before oird fires `TIMEOUT` error. |
-| `rate_limit_per_minute` | `60` | reqs / min per UID | Token-bucket refill rate. |
-| `rate_limit_burst` | `10` | reqs | Token-bucket capacity. SHELL_UID bypasses rate-limit by design. |
+| `rate_limit_per_minute` | `60` | reqs / min per UID | Token-bucket refill rate. When tripped, the runtime computes the actual wait via `RateLimiter.nextTokenWaitMs(uid)` and embeds it in `OirThrottledException.retryAfterMs` so the SDK's `retryThrottle` opt-in can back off precisely. |
+| `rate_limit_burst` | `10` | reqs | Token-bucket capacity. SHELL_UID + SYSTEM_UID bypass rate-limit by design. Reject-with-hint is the right DoS posture; enqueue-and-wait would let one UID pin every binder dispatch thread. Apps that prefer "make this call eventually succeed" pass `retryThrottle: Int = N` to any suspend SDK method (see [SDK.md](SDK.md)). |
 | `image.max_pixels` | `16777216` (4096x4096) | pixels | Hard cap on decoded JPEG/PNG pixel count. Caps RGB allocation at ~48 MB and prevents pathological `w*h` overflow on untrusted input. `0` disables the cap. |
 
 ## Per-capability knobs
