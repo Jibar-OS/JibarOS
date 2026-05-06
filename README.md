@@ -4,7 +4,7 @@
 
 <p align="center">
   <a href="https://github.com/Jibar-OS/JibarOS/stargazers">
-    <img src="https://img.shields.io/github/stars/Jibar-OS/JibarOS?style=social" alt="Stars" />
+    <img src="https://img.shields.io/github/stars/Jibar-OS/JibarOS?style=flat&logo=github&label=Stars&color=yellow" alt="Stars" />
   </a>
   <img src="https://img.shields.io/badge/Android-16-34A853?logo=android&logoColor=white" alt="Android 16" />
   <img src="https://img.shields.io/badge/License-Apache%202.0-blue" alt="Apache 2.0" />
