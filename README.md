@@ -10,11 +10,7 @@
 </p>
 
 <p align="center">
-  <a href="https://www.loom.com/share/a4de8aa1666e4b9a8efa128f98b7f16c">
-    <img src="https://cdn.loom.com/sessions/thumbnails/a4de8aa1666e4b9a8efa128f98b7f16c-7826565414152998-full-play.gif"
-         alt="v0.6.9 Fire All demo — Loom"
-         width="720"/>
-  </a>
+  <a href="https://www.loom.com/share/a4de8aa1666e4b9a8efa128f98b7f16c"><img src="https://cdn.loom.com/sessions/thumbnails/a4de8aa1666e4b9a8efa128f98b7f16c-7826565414152998-full-play.gif" alt="v0.6.9 Fire All demo — Loom" width="720"/></a>
 </p>
 
 <p align="center">
