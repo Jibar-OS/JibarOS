@@ -3,9 +3,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/Jibar-OS/JibarOS/stargazers">
-    <img src="https://img.shields.io/github/stars/Jibar-OS/JibarOS?style=social" alt="Stars" />
-  </a>
+  <a href="https://github.com/Jibar-OS/JibarOS/stargazers"><img src="https://img.shields.io/github/stars/Jibar-OS/JibarOS?style=social" alt="Stars" /></a>
   <img src="https://img.shields.io/badge/Android-16-34A853?logo=android&logoColor=white" alt="Android 16" />
   <img src="https://img.shields.io/badge/License-Apache%202.0-blue" alt="Apache 2.0" />
   <img src="https://img.shields.io/badge/Status-pre--1.0-orange" alt="pre-1.0" />
