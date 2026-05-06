@@ -3,8 +3,8 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/Jibar-OS/jibar-os/stargazers">
-    <img src="https://img.shields.io/github/stars/Jibar-OS/jibar-os?style=social" alt="Stars" />
+  <a href="https://github.com/Jibar-OS/JibarOS/stargazers">
+    <img src="https://img.shields.io/github/stars/Jibar-OS/JibarOS?style=social" alt="Stars" />
   </a>
   <img src="https://img.shields.io/badge/Android-16-34A853?logo=android&logoColor=white" alt="Android 16" />
   <img src="https://img.shields.io/badge/License-Apache%202.0-blue" alt="Apache 2.0" />
@@ -40,7 +40,7 @@ This is runtime infrastructure, not a chatbot. The closest mental model is **"a 
 
 Named after Puerto Rico's *jíbaros* — rural folk, known for resilience and self-sufficiency. Models and runtime live on the device, work offline, no cloud account required.
 
-> ⭐ **[Star this repo](https://github.com/Jibar-OS/jibar-os)** — it's the cheapest signal that on-device AI belongs at the platform tier, and it helps the right contributors find the project.
+> ⭐ **[Star this repo](https://github.com/Jibar-OS/JibarOS)** — it's the cheapest signal that on-device AI belongs at the platform tier, and it helps the right contributors find the project.
 
 ---
 
@@ -241,7 +241,7 @@ Full guide: [`docs/BUILD.md`](./docs/BUILD.md).
 
 See [`docs/OVERVIEW.md#repos`](./docs/OVERVIEW.md#repos) for the full list. Core:
 
-- [`jibar-os`](https://github.com/Jibar-OS/jibar-os) — this repo (manifest + docs)
+- [`jibar-os`](https://github.com/Jibar-OS/JibarOS) — this repo (manifest + docs)
 - [`oird`](https://github.com/Jibar-OS/oird) — native inference daemon
 - [`oir-framework-addons`](https://github.com/Jibar-OS/oir-framework-addons) — OIRService + AIDL
 - [`oir-patches`](https://github.com/Jibar-OS/oir-patches) — 5 small patches to upstream AOSP
